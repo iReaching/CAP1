@@ -24,7 +24,7 @@
         <div class="polygon-3"></div>
         <div class="polygon-4"></div>
 
-        <h1 class="mabuhay">Mabuhay!</h1>
+        <h1 class="mabuhay">ROSCA!</h1>
         <h2 class="welcome">WELCOME</h2>
 
         <div class="group-7">
