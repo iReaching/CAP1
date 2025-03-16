@@ -1,0 +1,92 @@
+/* Global Styles */
+body {
+    background: #3D1C54; /* Dark purple background */
+    font-family: 'Inter', sans-serif;
+    color: white;
+}
+
+/* Header */
+.header {
+    background: #71628A; /* Purple background */
+    display: flex;
+    align-items: center;
+    padding: 20px;
+}
+
+.logo {
+    width: 60px;
+    height: 60px;
+    margin-right: 15px;
+}
+
+.title {
+    font-weight: 700;
+    font-size: 36px;
+}
+
+/* Welcome Section */
+.welcome {
+    font-size: 32px;
+    font-weight: 700;
+    margin-top: 20px;
+}
+
+.villagers {
+    font-weight: bold;
+}
+
+.subtitle {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+
+/* Role Cards */
+.role-card {
+    background: #8A719E; /* Light purple */
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+    margin-bottom: 30px;
+}
+
+.profile-icon {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 15px;
+}
+
+.account-text {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.login-link {
+    color: #00FF73;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.login-link:hover {
+    text-decoration: underline;
+}
+
+/* Custom Buttons */
+.btn-custom {
+    background: #00FF73;
+    font-size: 20px;
+    font-weight: bold;
+    color: black;
+    padding: 10px 30px;
+    border-radius: 30px;
+    box-shadow: 5px 5px 10px black;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.btn-custom:hover {
+    background: #00DD60;
+}

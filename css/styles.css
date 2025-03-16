@@ -1,0 +1,269 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+
+/* Global Styles */
+body {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevents scrolling */
+    background: #FFFFFF;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.rectangle-3 {
+    position: absolute;
+    width: 450px;
+    height: 504px;
+    left: -101px;
+    top: 0px;
+    background: linear-gradient(180deg, #443627 0%, #AA8762 100%);
+}
+
+.rectangle-1 {
+    position: absolute;
+    width: 1920px;
+    height: 990px;
+    left: 349px; /* Adjusted for 1920px */
+    top: -4px;
+    background: linear-gradient(180deg, #B5828C 0%, #4F393D 100%);
+}
+
+.rectangle-2 {
+    position: absolute;
+    width: 897px;
+    height: 684px;
+    left: -41px;
+    top: 335px;
+    background: linear-gradient(180deg, #FFB4A2 0%, #996C61 100%);
+}
+
+/* Ellipses */
+.ellipse-4 {
+    position: absolute;
+    width: 652px;
+    height: 199px;
+    left: 414px;
+    top: 828px;
+    background: linear-gradient(180deg, #C599B6 0%, #5F4A58 100%);
+    border-radius: 50%;
+}
+
+.ellipse-5 {
+    position: absolute;
+    width: 441px;
+    height: 141px;
+    left: 535px;
+    top: 872px;
+    background: linear-gradient(180deg, #FFB4A2 0%, #996C61 100%);
+    border-radius: 50%;
+}
+
+.ellipse-3 {
+    position: absolute;
+    width: 333px;
+    height: 102px;
+    left: 573px;
+    top: 916px;
+    background: linear-gradient(180deg, #EFDCAB 0%, #897E62 100%);
+    border-radius: 50%;
+}
+
+.ellipse-2 {
+    position: absolute;
+    width: 750px;
+    height: 750px;
+    left: -69px;
+    top: 527px;
+    background: linear-gradient(180deg, #D98324 0%, #734513 100%);
+    border-radius: 50%;
+}
+
+.ellipse-1 {
+    position: absolute;
+    width: 453px;
+    height: 421px;
+    left: -147px;
+    top: 745px;
+    background: linear-gradient(180deg, #EFDCAB 0%, #897E62 100%);
+    border-radius: 50%;
+}
+
+/* Polygons */
+.polygon-1 {
+    position: absolute;
+    width: 800px;
+    height: 553px;
+    left: 1300px;
+    top: 700px;
+    transform: rotate(-45deg);
+    background: linear-gradient(180deg, #FFCDB2 0%, #997B6B 100%);
+}
+
+.polygon-2 {
+    position: absolute;
+    width: 0px;
+    height: 0px;
+    left: 230px;
+    top: 751px;
+    border-left: 100px solid transparent;  /* Left side */
+    border-right: 100px solid transparent; /* Right side */
+    border-bottom: 499px solid #C599B6;   /* Bottom creates the triangle */
+    background: linear-gradient(180deg, #C599B6 0%, #5F4A58 100%);
+}
+
+.polygon-3 {
+    position: absolute;
+    width: 0px;
+    height: 0px;
+    left: 350px;
+    top: 849px;
+    border-left: 70px solid transparent;  /* Left side */
+    border-right: 70px solid transparent; /* Right side */
+    border-bottom: 339px solid #FAD0C4;   /* Bottom creates the triangle */
+    background: linear-gradient(180deg, #FAD0C4 0%, #947B74 100%);
+}
+
+.polygon-4 {
+    position: absolute;
+    width: 0px;
+    height: 0px;
+    left: 437px;
+    top: 882px;
+    border-left: 100px solid transparent;  /* Left side */
+    border-right: 100px solid transparent; /* Right side */
+    border-bottom: 215px solid #FFF7F3;   /* Bottom creates the triangle */
+    background: linear-gradient(180deg, #FFF7F3 0%, #999492 100%);
+}
+
+.polygon-5 {
+    position: absolute;
+    width: 1200px;
+    height: 712px;
+    left: 960px;
+    top: 700px;
+    transform: rotate(-45deg);
+    background: linear-gradient(180deg, #E5989B 0%, #7F5456 100%);
+}
+/* Text */
+.mabuhay {
+    font-size: 100px; /* Adjusted for 1080p */
+    font-weight: 700;
+    position: absolute;
+    top: 150px; /* Move it down */
+    left: 360px; /* Align it properly */
+    color: #FFFFFF;
+}
+
+.welcome {
+    font-size: 150px; /* Adjusted */
+    font-weight: 700;
+    position: absolute;
+    top: 200px; /* Position below "Mabuhay!" */
+    left: 40px;
+    color: #FFFFFF;
+}
+
+/* Button */
+.group-7 {
+    position: absolute;
+    width: 344px;
+    height: 100px;
+    left: 956px;
+    top: 577px;
+}
+
+.rectangle-4 {
+    position: absolute;
+    width: 344px;
+    height: 100px;
+    left: 957px;
+    top: 577px;
+    background: linear-gradient(90deg, #00FF73 3.5%, rgba(29, 239, 204, 0.88) 100%);
+    box-shadow: 10px 10px 4px #000000;
+    border-radius: 30px;
+}
+
+.proceed {
+    position: absolute;
+    bottom: 100px; /* Adjusted for 1080p */
+    right: 100px;
+    padding: 20px 40px;
+    font-size: 50px;
+    font-weight: bold;
+    background: linear-gradient(90deg, #00FF73 3.5%, rgba(29, 239, 204, 0.88) 100%);
+    box-shadow: 10px 10px 5px rgba(0, 0, 0, 0.7);
+    border-radius: 30px;
+    text-align: center;
+    color: black;
+    cursor: pointer;
+}
+/* Container for the entire layout */
+.container {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* Ensure elements don't resize on different resolutions */
+@media screen and (max-width: 1920px) {
+    .container {
+        transform: scale(1);
+        transform-origin: top left;
+    }
+}
+
+/* Adjust for screens smaller than 1920px */
+@media screen and (max-width: 1440px) {
+    .container {
+        transform: scale(0.75); /* 75% scale */
+        transform-origin: top left;
+    }
+}
+
+/* Adjust for Full HD (1080p) screens */
+@media screen and (max-width: 1280px) {
+    .container {
+        transform: scale(0.65); /* Scale down to fit */
+        transform-origin: top left;
+    }
+}
+
+/* Adjust for small laptop screens */
+@media screen and (max-width: 1024px) {
+    .container {
+        transform: scale(0.55); /* 55% scale */
+        transform-origin: top left;
+    }
+}
+
+/* Adjust for mobile devices */
+@media screen and (max-width: 768px) {
+    .container {
+        transform: scale(0.4); /* Scale down for smaller screens */
+        transform-origin: top left;
+    }
+}
+
+/* Hide elements on very small screens */
+@media screen and (max-width: 400px) {
+    .container {
+        display: none; /* Hide content if the screen is too small */
+    }
+}
+
+
