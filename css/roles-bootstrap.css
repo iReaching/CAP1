@@ -1,17 +1,10 @@
 /* Global Styles */
 body {
-    background: #3D1C54; /* Dark purple background */
+    background: white; /* Dark purple background */
     font-family: 'Inter', sans-serif;
-    color: white;
+    color: black;
 }
 
-/* Header */
-.header {
-    background: #71628A; /* Purple background */
-    display: flex;
-    align-items: center;
-    padding: 20px;
-}
 
 .logo {
     width: 60px;
@@ -43,7 +36,7 @@ body {
 
 /* Role Cards */
 .role-card {
-    background: #8A719E; /* Light purple */
+    background: #578FCA; /* Light purple */
     padding: 30px;
     border-radius: 10px;
     text-align: center;
@@ -58,9 +51,10 @@ body {
 }
 
 .account-text {
-    font-size: 14px;
+    font-size: 25px;
     font-weight: 600;
     margin-bottom: 10px;
+    color: white;
 }
 
 .login-link {
@@ -90,3 +84,24 @@ body {
 .btn-custom:hover {
     background: #00DD60;
 }
+
+
+.navbar-brand span {
+    font-weight: bold;
+    font-size: 1.5rem;
+  }
+
+  .bg-topbar {
+    background-color: #3577b1;
+  }
+  
+  .topbar-logo {
+    width: 50px;
+    height: auto;
+  }
+  
+  .topbar-text {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+  }

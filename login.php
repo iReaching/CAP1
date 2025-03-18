@@ -9,7 +9,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Validate empty fields
     if (empty($userID) || empty($password)) {
         $_SESSION["login_error"] = "Please fill in all fields.";
-        header("Location: login_visitor.php");
+        header("Location: login_homeowner.php");
         exit();
     }
 
@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION["user_id"] = $row["user_id"];
             $_SESSION["login_success"] = "Welcome back, $userID!";
             // Redirect back to login_visitor.php to show modal
-            header("Location: login_visitor.php");
+            header("Location: login_homeowner.php");
             exit();
         } else {
             $_SESSION["login_error"] = "Incorrect password.";
@@ -34,7 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION["login_error"] = "User ID not found.";
     }
     
-    header("Location: login_visitor.php");
+    header("Location: login_homeowner.php");
     exit();
 }
 ?>

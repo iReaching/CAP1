@@ -1,163 +1,92 @@
 /* Global Styles */
 body {
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    padding: 0;
-  }
-  
-/* Left Section */
-.left-section {
-    background: #8174A0; /* Light purple, lighter than right side */
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start; /* Align content at the top */
-    align-items: center; /* Center content horizontally */
-    padding-top: 30px; /* Adds space from the top */
-    position: relative;
-  }
-  
-  
-.branding {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: left;
-    gap: 20px; /* Increased gap for better spacing */
-    position: absolute;
-    top: 30px;
-    left: 50%;
-    transform: translateX(-50%);
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
 }
 
-.branding-text {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 15px; /* Added spacing between KA and Bayan! */
+/* Navbar */
+.bg-topbar {
+  background-color: #337ab7;
+}
+.topbar-logo {
+  width: 50px;
+}
+.topbar-text {
+  font-size: 28px;
+  font-weight: 700;
 }
 
-.ka {
-    font-weight: 900;
-    font-size: 100px;
-    margin: 0;
-    line-height: 1;
-    color: #000000;
+/* Login Page Structure */
+.container {
+  min-height: 100vh;
 }
 
-.bayan {
-    font-weight: 700;
-    font-size: 30px;
-    color: #000000;
-    text-decoration: underline;
-    text-underline-offset: 8px;
-    margin-bottom: 45px; /* More spacing between Bayan! and Musta */
-    display: flex;
-    align-items: center;
+/* Left Side (Welcome Section) */
+.bg-welcome {
+  background-color: #5b9bd5;
+  text-align: center;
+}
+.bg-welcome img {
+  width: 120px;
+}
+.bg-welcome h3 {
+  font-size: 2rem;
+  font-weight: 700;
+}
+.bg-welcome h1 {
+  font-size: 3rem;
+  font-weight: 700;
+}
+.bg-welcome hr {
+  width: 50%;
+  border: 2px solid white;
+  margin: 10px auto;
 }
 
-.musta {
-    position: absolute;
-    font-weight: 700;
-    font-size: 30px;
-    color: #000000;
-    left: 275px;
-    margin-top: 45px; /* More spacing between Bayan! and Musta */
-    display: flex;
-    align-items: center;
+/* Right Side (Login Form) */
+.bg-white {
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
+}
+.bg-white h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
-
-  
-.logo-image {
-    width: 80px; /* Adjust size */
-    height: auto;
-    margin-right: 10px; /* Space between logo and text */
+/* Input Fields */
+.input-group {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+.input-group-text {
+  background: white;
+  border: none;
+}
+.icon {
+  width: 25px;
 }
 
-  
-  /* Right Section */
-  .right-section {
-    background-color: #3d1c54; /* Purple background */
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  /* Visitors Title & Line */
-  .visitors-title {
-    color: #fff;
-  }
-  
-  .visitors-title h2 {
-    color: #fff;
-    font-weight: 700;
-    text-align: left;
-    text-decoration: underline; /* Adds underline */
-    text-underline-offset: 5px; /* Adjusts spacing */
-  }
-  
-  /* Login Box */
-  .login-box {
-    background: #e8a9b8; /* Pink background */
-    border-radius: 10px;
-    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
-    width: 90%;
-    max-width: 420px;
-    text-align: center;
-  }
-  
-  .vilman-logo {
-    width: 60px;
-  }
-  
-  .vilman-text {
-    font-weight: 700;
-    font-size: 24px;
-    margin: 0;
-  }
-  
-  /* Input Fields */
-  .input-group {
-    background: white;
-    border-radius: 10px;
-    box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-  }
-  
-  .input-group-text {
-    background: white;
-    border: none;
-  }
-  
-  .icon {
-    width: 25px;
-  }
-  
-  /* Forgot Password */
-  .forgot-password {
-    color: blue;
-    text-decoration: none;
-    font-weight: 700;
-  }
-  
-  .forgot-password:hover {
-    text-decoration: underline;
-  }
-  
-  /* Login Button */
-  .btn-custom {
-    background: #00ff73;
-    font-size: 20px;
-    font-weight: bold;
-    color: black;
-    padding: 10px;
-    border-radius: 30px;
-    box-shadow: 5px 5px 10px black;
-    border: none;
-  }
-  
-  .btn-custom:hover {
-    background: #00dd60;
-  }
-  
+/* Login Button */
+.proceed-btn {
+  background-color: #3cff90;
+  color: black;
+  border-radius: 25px;
+  font-weight: bold;
+  box-shadow: 4px 5px 0px rgba(0, 0, 0, 0.6);
+  transition: all 0.3s ease;
+  font-size: 24px;
+  padding: 10px;
+}
+.proceed-btn:hover {
+  background-color: #36e37f;
+}
+
+/* Sign Up Link */
+.text-primary {
+  font-weight: bold;
+}
