@@ -26,8 +26,8 @@ body {
 }
 
 .welcome-text-container {
-  padding-top: 50px;
-  padding-left: 40px;
+  padding-top: 0px;
+  padding-left: 0px;
 }
 
 .mabuhay {
@@ -44,7 +44,7 @@ body {
 }
 
 .proceed-btn-container {
-  padding-right: 40px;
+  padding-right: 50px;
 }
 
 .proceed-btn {
