@@ -27,7 +27,7 @@
   </nav>
 
   <!-- Main Section -->
-  <div class="container-fluid welcome-container text-white text-start py-5">
+  <div class="container-fluid welcome-container text-white text-start py-4">
   <div class="row">
     <div class="col-md-8 ps-5">
       <h2 class="mabuhay fw-bold">Mabuhay!</h2>
