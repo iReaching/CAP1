@@ -26,6 +26,17 @@ $user_name = 'Rosca, A.'; // Example user name, replace with dynamic session dat
             color: #007bff;
             font-weight: bold;
         }
+        .facilities-container {
+            margin: 30px auto;
+            max-width: 900px;
+        }
+        .schedule-container {
+            margin: 30px auto;
+            max-width: 900px;
+            background: #f8f0e3;
+            padding: 20px;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
@@ -51,9 +62,54 @@ $user_name = 'Rosca, A.'; // Example user name, replace with dynamic session dat
     </nav>
 
     <div class="container welcome-container">
-        <img src="your-image.png" alt="VilMan Logo" class="img-fluid" style="max-width: 200px;">
         <h2>Mabuhay!</h2>
         <h1>WELCOME to VilMan!</h1>
+    </div>
+
+    <div class="container facilities-container">
+        <h2 class="text-center">FACILITIES</h2>
+        <div class="card p-3">
+            <img src="your-image.png" alt="Facility" class="card-img-top">
+            <div class="card-body">
+                <h5 class="card-title">Clubhouse</h5>
+                <p class="card-text">A building or area used for social or recreational activities, serving as a central gathering place for residents.</p>
+                <button class="btn btn-success">ADD</button>
+                <button class="btn btn-danger">REMOVE</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container schedule-container">
+        <h2 class="text-center">SCHEDULE</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>House ID</th>
+                    <th>Date</th>
+                    <th>Message</th>
+                    <th>Type</th>
+                    <th>Time Interval</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php for ($i = 0; $i < 5; $i++): ?>
+                <tr>
+                    <td>John Doe</td>
+                    <td>123</td>
+                    <td>2025-03-20</td>
+                    <td>Event</td>
+                    <td>Clubhouse</td>
+                    <td>10:00 - 12:00</td>
+                    <td>
+                        <button class="btn btn-success">Approve</button>
+                        <button class="btn btn-danger">Reject</button>
+                    </td>
+                </tr>
+                <?php endfor; ?>
+            </tbody>
+        </table>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
