@@ -5,6 +5,8 @@ require 'db_connect.php'; // Database connection
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $userID = trim($_POST["user_id"]);
     $password = trim($_POST["password"]);
+    $role = isset($_POST["role"]) ? trim($_POST["role"]) : "";
+
 
     // Validate empty fields
     if (empty($userID) || empty($password)) {
@@ -14,8 +16,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Retrieve user record by user_id
-    $stmt = $conn->prepare("SELECT user_id, password FROM users WHERE user_id = ?");
-    $stmt->bind_param("s", $userID);
+    $stmt = $conn->prepare("SELECT user_id, password FROM users WHERE user_id = ? AND role = ?");
+    $stmt->bind_param("ss", $userID, $role);
     $stmt->execute();
     $result = $stmt->get_result();
 

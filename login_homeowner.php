@@ -73,6 +73,8 @@ session_start();
         <?php unset($_SESSION["login_success"]); endif; ?>
 
         <form action="login.php" method="POST">
+        <input type="hidden" name="role" value="homeowner">
+
           <div class="input-group mb-3">
             <span class="input-group-text bg-white border-end-0">
               <img src="./images/profile.png" class="icon" alt="User">

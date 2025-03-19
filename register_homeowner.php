@@ -24,7 +24,7 @@ session_start();
     </div>
   </nav>
 
-  <!-- Login Section -->
+  <!-- Register Section -->
   <div class="container d-flex justify-content-center align-items-center min-vh-100">
     <div class="row shadow rounded-4 overflow-hidden" style="max-width: 900px; width: 100%;">
       <!-- Left Side -->
@@ -70,6 +70,10 @@ session_start();
       <?php unset($_SESSION["register_success"]); endif; ?>
 
       <form action="register.php" method="POST">
+
+      <input type="hidden" name="role" value="homeowner">
+
+      
         <!-- User ID Field -->
         <div class="input-group mb-3">
           <span class="input-group-text bg-white border-end-0">
