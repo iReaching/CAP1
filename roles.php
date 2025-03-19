@@ -36,7 +36,7 @@
                 <div class="role-card my-4 mx-1">
                     <img src="./images/homeowner.png" class="profile-icon" alt="Visitor">
                     <p class="account-text">HOMEOWNERS</p>
-                    <a href="login_visitor.php" class="btn btn-custom">CLICK HERE</a>
+                    <a href="login_homeowner.php" class="btn btn-custom">CLICK HERE</a>
                 </div>
             </div>
             <div class="col-md-4 my-4 mx-1">
