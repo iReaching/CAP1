@@ -43,6 +43,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION["register_error"] = "Something went wrong. Try again.";
     }
 
+    // After user registration is successful
+    $stmt = $conn->prepare("INSERT INTO user_profiles (user_id) VALUES (?)");
+    $stmt->bind_param("s", $user_id);
+    $stmt->execute();
+
+
     header("Location: $redirectPage");
     exit();
 }

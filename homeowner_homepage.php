@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['user_id'])) {
-    header("Location: l_admin.php");
+    header("Location: login_homeowner.php");
     exit();
 }
 require 'db_connect.php';
@@ -24,9 +24,10 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 
-$stmt = $conn->query("SELECT * FROM amenities");
-$amenities = $stmt->fetch_all(MYSQLI_ASSOC);
 ?>
+
+
+
 
 
 <!DOCTYPE html>
@@ -34,7 +35,7 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VilMan - Administrator</title>
+    <title>VilMan - Homeowner</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -79,7 +80,7 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
 
     <!-- Center: ADMINISTRATOR -->
     <div class="text-white fw-bold fs-3 text-center flex-grow-1 position-absolute start-50 translate-middle-x">
-      ADMINISTRATOR
+      HOMEOWNER
     </div>
 
 
@@ -123,7 +124,6 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
         <li class="nav-item"><a class="nav-link" href="#amenities">AMENITIES</a></li>
         <li class="nav-item"><a class="nav-link" href="#items-section">ITEM</a></li>
         <li class="nav-item"><a class="nav-link" href="#report">REPORT</a></li>
-        <li class="nav-item"><a class="nav-link" href="#entrylog">ENTRY LOG</a></li>
         <li class="nav-item"><a class="nav-link" href="#account">ACCOUNT</a></li>
       </ul>
     </div>
@@ -182,158 +182,100 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
     <h2 class="text-center fw-bold mb-5">AMENITIES</h2>
     <div class="row">
       
-    <div class="col-md-6 text-center px-5">
-    <div class="border rounded p-3 bg-white shadow-sm">
-      <!-- Toggle Buttons -->
-      <div class="btn-group w-100 mb-4" role="group">
-        <button class="btn btn-tab fw-bold active" id="tab-view">VIEW AMENITY</button>
-        <button class="btn btn-tab fw-bold" id="tab-add">ADD AMENITY</button>
-        <button class="btn btn-tab fw-bold" id="tab-edit">EDIT AMENITY</button>
-      </div>
-      <!-- View Amenities Section -->
-      <div id="viewAmenitiesSection">
-        <?php foreach ($amenities as $amenity): ?>
-          <div class="carousel-container border rounded p-3 mb-4">
-            <img src="<?php echo $amenity['image']; ?>" class="img-fluid border rounded mb-3" alt="Facility" style="max-height: 300px; object-fit: cover;">
+      <!-- Facilities Carousel -->
+      <div class="col-md-6 text-center px-5">
+        <div class="carousel-container border rounded p-3">
+          <img src="./images/facility1.jpg" class="img-fluid border rounded mb-3" alt="Facility" style="max-height: 300px; object-fit: cover;">
+          
+          <div class="form-control text-center fw-semibold">Clubhouse</div>
 
-            <!-- Amenity Name -->
-            <div class="form-control text-center fw-semibold mb-3">
-              <?php echo htmlspecialchars($amenity['name']); ?>
-            </div>
-
-
-            <!-- Description -->
-            <div class="form-control text-start mb-3" style="height: 150px; overflow-y: auto;">
-              <?php echo nl2br(htmlspecialchars($amenity['description'])); ?>
-            </div>
+          
+          <div class="form-floating mb-3">
+            <textarea class="form-control" id="facilityDesc" style="height: 230px;" readonly>A building or area used for social or recreational activities, serving as a central gathering place for residents</textarea>
+            <label for="facilityDesc">Description</label>
           </div>
-        <?php endforeach; ?>
 
-        <!-- Dot Indicators -->
-        <div class="mt-3">
-          <span class="dot mx-1"></span>
-          <span class="dot mx-1"></span>
-          <span class="dot mx-1"></span>
-          <span class="dot mx-1 active-dot"></span>
-          <span class="dot mx-1"></span>
-          <span class="dot mx-1"></span>
-          <span class="dot mx-1"></span>
+          <div class="d-flex justify-content-center gap-3">
+          </div>
+
+          <!-- Dot Indicators with Prev/Next -->
+            <div class="mt-3 d-flex justify-content-center align-items-center gap-2">
+            <!-- Prev Button -->
+            <button class="btn btn-sm btn-outline-secondary rounded-circle" id="prevDot" aria-label="Previous">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+
+            <!-- Dots -->
+            <div>
+                <span class="dot mx-1"></span>
+                <span class="dot mx-1"></span>
+                <span class="dot mx-1"></span>
+                <span class="dot mx-1 active-dot"></span>
+                <span class="dot mx-1"></span>
+                <span class="dot mx-1"></span>
+                <span class="dot mx-1"></span>
+            </div>
+
+            <!-- Next Button -->
+            <button class="btn btn-sm btn-outline-secondary rounded-circle" id="nextDot" aria-label="Next">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+            </div>
         </div>
-      </div>
-
-      <!-- Add Amenity Section (hidden by default) -->
-      <div id="addAmenitySection" style="display: none;">
-        <div class="border rounded p-3 mb-4 bg-white shadow-sm">
-          <h4 class="text-center fw-bold mb-3">Add New Amenity</h4>
-          <form action="add_amenity.php" method="POST" enctype="multipart/form-data">
-            <div class="mb-3">
-              <input type="text" name="name" class="form-control" placeholder="Amenity Name" required>
-            </div>
-            <div class="mb-3">
-              <textarea name="description" class="form-control" placeholder="Amenity Description" rows="3" required></textarea>
-            </div>
-            <div class="mb-3">
-              <input type="file" name="image" accept="image/*" class="form-control" required>
-            </div>
-            <div class="d-grid">
-              <button type="submit" class="btn btn-success">Add Amenity</button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <div id="editAmenitySection" style="display: none;">
-        <div class="border rounded p-3 mb-4 bg-white shadow-sm">
-          <h4 class="text-center fw-bold mb-3">Edit Existing Amenity</h4>
-          <form action="edit_amenity.php" method="POST">
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Select Amenity</label>
-              <select name="amenity_id" class="form-select" required>
-                <option value="" disabled selected>Select an amenity</option>
-                <?php foreach ($amenities as $amenity): ?>
-                  <option value="<?php echo $amenity['id']; ?>">
-                    <?php echo htmlspecialchars($amenity['name']); ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-semibold">New Name</label>
-              <input type="text" name="new_name" class="form-control" placeholder="Leave blank to keep current name">
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-semibold">New Description</label>
-              <textarea name="new_description" class="form-control" placeholder="Leave blank to keep current description" rows="3"></textarea>
-            </div>
-            <div class="mb-3">
-              <label class="form-label fw-semibold">New Image</label>
-              <input type="file" name="new_image" accept="image/*" class="form-control">
-              <small class="text-muted">Optional — only choose a file if you want to replace the current image.</small>
-            </div>
-
-            <div class="d-grid">
-              <button type="submit" class="btn btn-warning">Update Amenity</button>
-            </div>
-          </form>
-        </div>
-      </div>
     </div>
-    </div> <!-- End of Left Column -->
 
+      <!-- Schedule Request Form -->
+        <div class="col-md-6">
+            <div class="bg-light border p-4 rounded shadow-sm">
+                <h3 class="text-center fw-bold mb-4">Schedule Amenity</h3>
 
+                <form id="scheduleForm">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Full Name</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
 
-    
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">House ID</label>
+                    <input type="text" name="house_id" class="form-control" required>
+                </div>
 
-      <!-- Schedule Table -->
-      <div class="col-md-6">
-        <div class="bg-light border p-3 rounded shadow-sm">
-          <h3 class="text-center fw-bold mb-4">SCHEDULE</h3>
-          <table class="table table-bordered text-center align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Name</th>
-                <th>House ID</th>
-                <th>Date</th>
-                <th>Message</th>
-                <th>Type</th>
-                <th>Time Interval</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php for ($i = 0; $i < 5; $i++): ?>
-              <tr>
-                <td>John Doe</td>
-                <td>123</td>
-                <td>2025-03-20</td>
-                <td>Event</td>
-                <td>Clubhouse</td>
-                <td>10:00 - 12:00</td>
-                <td>
-                  <button class="btn btn-success btn-sm">Approve</button>
-                  <button class="btn btn-danger btn-sm">Reject</button>
-                </td>
-              </tr>
-              <?php endfor; ?>
-            </tbody>
-          </table>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Date</label>
+                    <input type="date" name="date" class="form-control" required>
+                </div>
 
-          <!-- Pagination -->
-          <div class="d-flex justify-content-center mt-3">
-            <nav>
-              <ul class="pagination mb-0">
-                <li class="page-item"><a class="page-link" href="#"><i class="bi bi-chevron-double-left"></i></a></li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item"><a class="page-link" href="#">4</a></li>
-                <li class="page-item"><a class="page-link" href="#">5</a></li>
-                <li class="page-item"><a class="page-link" href="#">...</a></li>
-                <li class="page-item"><a class="page-link" href="#">29</a></li>
-                <li class="page-item"><a class="page-link" href="#"><i class="bi bi-chevron-double-right"></i></a></li>
-              </ul>
-            </nav>
-          </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Message / Purpose</label>
+                    <textarea name="message" class="form-control" rows="2" required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Amenity Type</label>
+                    <select name="type" class="form-select" required>
+                    <option value="" disabled selected>Select Amenity</option>
+                    <option value="Clubhouse">Clubhouse</option>
+                    <option value="Basketball Court">Basketball Court</option>
+                    <option value="Pool">Pool</option>
+                    <!-- Add more options as needed -->
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Time Interval</label>
+                    <div class="input-group">
+                    <input type="time" name="start_time" class="form-control" required>
+                    <span class="input-group-text">to</span>
+                    <input type="time" name="end_time" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                </div>
+            </form>
+            </div>
+            </div>
         </div>
       </div>
 
@@ -690,6 +632,25 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
 
 
 
+<!-- Success Modal for borrowing amenities -->
+<div class="modal fade" id="scheduleSuccessModal" tabindex="-1" aria-labelledby="scheduleSuccessModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-success">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="scheduleSuccessModalLabel">Request Submitted</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Your amenity schedule request has been submitted. A staff member will review it shortly.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Okay</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 
 
@@ -899,33 +860,40 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
 
 
 
-<!-- items section to animate the highlighting for the 3 sections -->
+<!-- items section to animate the highlighting for the 2 sections -->
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const viewBtn = document.getElementById("btnViewAmenities");
-    const addBtn = document.getElementById("btnAddAmenity");
-    const editBtn = document.getElementById("btnEditAmenity");
+    const itemTab = document.getElementById("tab-item");
+    const scheduleTab = document.getElementById("tab-schedule");
+    const itemSection = document.getElementById("items-section");
+    const scheduleSection = document.getElementById("schedule-section");
+    const highlightBar = document.getElementById("highlightBar");
 
-    const viewSection = document.getElementById("viewAmenitiesSection");
-    const addSection = document.getElementById("addAmenitySection");
-    const editSection = document.getElementById("editAmenitySection");
-
-    function toggleTabs(activeBtn, activeSection) {
-      [viewBtn, addBtn, editBtn].forEach(btn => btn.classList.remove("btn-primary"));
-      [viewBtn, addBtn, editBtn].forEach(btn => btn.classList.add("btn-outline-primary"));
-      activeBtn.classList.remove("btn-outline-primary");
-      activeBtn.classList.add("btn-primary");
-
-      [viewSection, addSection, editSection].forEach(sec => sec.style.display = "none");
-      activeSection.style.display = "block";
+    function moveHighlight(button) {
+      const offset = button.offsetTop;
+      highlightBar.style.top = offset + "px";
     }
 
-    viewBtn.addEventListener("click", () => toggleTabs(viewBtn, viewSection));
-    addBtn.addEventListener("click", () => toggleTabs(addBtn, addSection));
-    editBtn.addEventListener("click", () => toggleTabs(editBtn, editSection));
+    itemTab.addEventListener("click", function () {
+      itemTab.classList.add("active");
+      scheduleTab.classList.remove("active");
+      itemSection.style.display = "block";
+      scheduleSection.style.display = "none";
+      moveHighlight(itemTab);
+    });
+
+    scheduleTab.addEventListener("click", function () {
+      scheduleTab.classList.add("active");
+      itemTab.classList.remove("active");
+      scheduleSection.style.display = "block";
+      itemSection.style.display = "none";
+      moveHighlight(scheduleTab);
+    });
+
+    // Set default highlight position on page load
+    moveHighlight(itemTab);
   });
 </script>
-
 
 
 
@@ -964,44 +932,18 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
   });
 </script>
 
-<!-- amenities section -->
+
+<!-- for amenities section -->
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const viewTab = document.getElementById("tab-view");
-    const addTab = document.getElementById("tab-add");
-    const editTab = document.getElementById("tab-edit");
+  document.getElementById("scheduleForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const modal = new bootstrap.Modal(document.getElementById("scheduleSuccessModal"));
+    modal.show();
 
-    const viewSection = document.getElementById("viewAmenitiesSection");
-    const addSection = document.getElementById("addAmenitySection");
-    const editSection = document.getElementById("editAmenitySection");
-
-    function activateTab(tab, section) {
-      // Reset active classes
-      [viewTab, addTab, editTab].forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-
-      // Hide all, show selected
-      [viewSection, addSection, editSection].forEach(sec => sec.style.display = "none");
-      section.style.display = "block";
-    }
-
-    viewTab.addEventListener("click", function (e) {
-      e.preventDefault();
-      activateTab(viewTab, viewSection);
-    });
-
-    addTab.addEventListener("click", function (e) {
-      e.preventDefault();
-      activateTab(addTab, addSection);
-    });
-
-    editTab.addEventListener("click", function (e) {
-      e.preventDefault();
-      activateTab(editTab, editSection);
-    });
+    // Optional: Reset form
+    this.reset();
   });
 </script>
-
 
 
 

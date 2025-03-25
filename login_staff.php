@@ -66,7 +66,7 @@ session_start();
             var loginModal = new bootstrap.Modal(document.getElementById("loginSuccessModal"));
             loginModal.show();
             document.getElementById("loginSuccessModal").addEventListener("hidden.bs.modal", function () {
-              window.location.href = "dashboard.php";
+              window.location.href = "homepage.php";
             });
           });
         </script>

@@ -119,4 +119,17 @@ html {
   .active-dot {
     background-color: #000;
   }
+  .btn-tab {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0;
+    width: 100%;
+  }
+  
+  .btn-tab.active {
+    background-color: #00cfff;
+    color: white;
+    border-color: #00cfff;
+    font-weight: bold;
+  }
   

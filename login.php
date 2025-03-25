@@ -5,7 +5,7 @@ require 'db_connect.php';
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $userID = trim($_POST["user_id"]);
     $password = trim($_POST["password"]);
-    $role = trim($_POST["role"]);  // 👈 Passed from the login form
+    $role = trim($_POST["role"]);
 
     if (empty($userID) || empty($password) || empty($role)) {
         $_SESSION["login_error"] = "All fields are required.";
@@ -26,13 +26,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION["role"] = $role;
             $_SESSION["login_success"] = "Welcome back, $userID!";
 
-            // Redirect to role-specific homepage
-            if ($role === "staff") {
-                header("Location: staff_homepage.php");
-            } else {
-                header("Location: homeowner_homepage.php");
+            if (password_verify($password, $user["password"])) {
+                $_SESSION["user_id"] = $user["user_id"];
+                $_SESSION["role"] = $role;
+                $_SESSION["login_success"] = "Welcome back, $userID!";
+            
+                // Redirect by role
+                switch ($role) {
+                    case "admin":
+                        header("Location: homepage.php");
+                        break;
+                    case "staff":
+                        header("Location: staff_homepage.php");
+                        break;
+                    case "homeowner":
+                        header("Location: homeowner_homepage.php");
+                        break;
+                    default:
+                        $_SESSION["login_error"] = "Unknown role!";
+                        header("Location: login_{$role}.php");
+                        break;
+                }
+                exit();
             }
-            exit();
+            
         } else {
             $_SESSION["login_error"] = "Incorrect password.";
         }
@@ -40,7 +57,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION["login_error"] = "User not found or role mismatch.";
     }
 
-    // Redirect back to the correct form
     header("Location: login_{$role}.php");
     exit();
 }
