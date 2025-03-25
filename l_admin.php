@@ -7,7 +7,7 @@ session_start();
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Homeowner Login | VilMan</title>
+  <title>Admin Login | VilMan</title>
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/login_homeowner.css?v=1.01">
@@ -36,7 +36,7 @@ session_start();
       </div>
       <!-- Right Side -->
       <div class="col-md-6 bg-white p-4 d-flex flex-column justify-content-center">
-        <h3 class="fw-bold text-center mb-4">STAFF</h3>
+        <h3 class="fw-bold text-center mb-4">ADMIN LOGIN</h3>
 
         <?php if (isset($_SESSION["login_error"])): ?>
         <div class="alert alert-danger text-center">
@@ -66,14 +66,13 @@ session_start();
             var loginModal = new bootstrap.Modal(document.getElementById("loginSuccessModal"));
             loginModal.show();
             document.getElementById("loginSuccessModal").addEventListener("hidden.bs.modal", function () {
-              window.location.href = "dashboard.php";
+              window.location.href = "homepage.php"; // You can customize this redirect
             });
           });
         </script>
         <?php unset($_SESSION["login_success"]); endif; ?>
 
-        <form action="login.php" method="POST">
-        <input type="hidden" name="role" value="staff">
+        <form action="login_admin.php" method="POST">
           <div class="input-group mb-3">
             <span class="input-group-text bg-white border-end-0">
               <img src="./images/profile.png" class="icon" alt="User">
@@ -92,7 +91,7 @@ session_start();
         </form>
 
         <div class="text-center mt-3">
-          <small>Don't Have an Account?<br><a href="register_staff.php" class="text-primary fw-bold">Sign Up Here</a></small>
+          <small>Don't have an admin account?<br><a href="r_admin.php" class="text-primary fw-bold">Register Here</a></small>
         </div>
       </div>
     </div>
