@@ -40,7 +40,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         $_SESSION["register_error"] = "Something went wrong. Try again.";
     }
-
+    $defaultProfilePic = './images/profile.png';
+    $insertProfile = $conn->prepare("INSERT INTO user_profiles (user_id, full_name, contact_number, profile_pic) VALUES (?, '', '', ?)");
+    $insertProfile->bind_param("ss", $user_id, $defaultProfilePic);
+    $insertProfile->execute();
     header("Location: r_admin.php");
     exit();
 }

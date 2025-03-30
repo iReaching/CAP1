@@ -26,6 +26,20 @@ if (isset($_SESSION['user_id'])) {
 
 $stmt = $conn->query("SELECT * FROM amenities");
 $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
+// Fetch all amenity requests to show in the admin SCHEDULE section
+$schedule_stmt = $conn->query("SELECT * FROM amenity_schedule ORDER BY created_at DESC");
+$schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
+
+
+// Fetch amenity schedule requests with amenity name
+$schedule_stmt = $conn->query("
+  SELECT s.*, a.name AS amenity_name
+  FROM amenity_schedule s
+  JOIN amenities a ON s.amenity_id = a.id
+  ORDER BY s.request_date DESC
+");
+$schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
+
 ?>
 
 
@@ -191,35 +205,38 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
         <button class="btn btn-tab fw-bold" id="tab-edit">EDIT AMENITY</button>
       </div>
       <!-- View Amenities Section -->
-      <div id="viewAmenitiesSection">
-        <?php foreach ($amenities as $amenity): ?>
-          <div class="carousel-container border rounded p-3 mb-4">
-            <img src="<?php echo $amenity['image']; ?>" class="img-fluid border rounded mb-3" alt="Facility" style="max-height: 300px; object-fit: cover;">
-
-            <!-- Amenity Name -->
-            <div class="form-control text-center fw-semibold mb-3">
-              <?php echo htmlspecialchars($amenity['name']); ?>
+        <div id="viewAmenitiesSection">
+          <?php foreach ($amenities as $amenity): ?>
+            <div class="carousel-container border rounded p-3 mb-4 amenity-item">
+              <img src="<?php echo $amenity['image']; ?>" class="img-fluid border rounded mb-3" alt="Facility" style="max-height: 300px; object-fit: cover;">
+              <div class="form-control text-center fw-semibold mb-3">
+                <?php echo htmlspecialchars($amenity['name']); ?>
+              </div>
+              <div class="form-control text-start mb-3" style="height: 150px; overflow-y: auto;">
+                <?php echo nl2br(htmlspecialchars($amenity['description'])); ?>
+              </div>
             </div>
-
-
-            <!-- Description -->
-            <div class="form-control text-start mb-3" style="height: 150px; overflow-y: auto;">
-              <?php echo nl2br(htmlspecialchars($amenity['description'])); ?>
-            </div>
-          </div>
-        <?php endforeach; ?>
-
-        <!-- Dot Indicators -->
-        <div class="mt-3">
-          <span class="dot mx-1"></span>
-          <span class="dot mx-1"></span>
-          <span class="dot mx-1"></span>
-          <span class="dot mx-1 active-dot"></span>
-          <span class="dot mx-1"></span>
-          <span class="dot mx-1"></span>
-          <span class="dot mx-1"></span>
+          <?php endforeach; ?>
         </div>
-      </div>
+          <div class="d-flex justify-content-center align-items-center dot-pagination mt-3">
+            <button id="prevBtn" class="btn btn-outline-secondary btn-sm me-2">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
+
+            <button id="nextBtn" class="btn btn-outline-secondary btn-sm ms-2">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+
+
 
       <!-- Add Amenity Section (hidden by default) -->
       <div id="addAmenitySection" style="display: none;">
@@ -245,7 +262,7 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
       <div id="editAmenitySection" style="display: none;">
         <div class="border rounded p-3 mb-4 bg-white shadow-sm">
           <h4 class="text-center fw-bold mb-3">Edit Existing Amenity</h4>
-          <form action="edit_amenity.php" method="POST">
+          <form action="edit_amenity.php" method="POST" enctype="multipart/form-data">
             <div class="mb-3">
               <label class="form-label fw-semibold">Select Amenity</label>
               <select name="amenity_id" class="form-select" required>
@@ -278,64 +295,69 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
         </div>
       </div>
     </div>
-    </div> <!-- End of Left Column -->
+  </div> <!-- End of Left Column -->
 
 
 
     
 
-      <!-- Schedule Table -->
+    <!-- Schedule Requests Overview -->
       <div class="col-md-6">
-        <div class="bg-light border p-3 rounded shadow-sm">
-          <h3 class="text-center fw-bold mb-4">SCHEDULE</h3>
-          <table class="table table-bordered text-center align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Name</th>
-                <th>House ID</th>
-                <th>Date</th>
-                <th>Message</th>
-                <th>Type</th>
-                <th>Time Interval</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php for ($i = 0; $i < 5; $i++): ?>
-              <tr>
-                <td>John Doe</td>
-                <td>123</td>
-                <td>2025-03-20</td>
-                <td>Event</td>
-                <td>Clubhouse</td>
-                <td>10:00 - 12:00</td>
-                <td>
-                  <button class="btn btn-success btn-sm">Approve</button>
-                  <button class="btn btn-danger btn-sm">Reject</button>
-                </td>
-              </tr>
-              <?php endfor; ?>
-            </tbody>
-          </table>
+        <div class="bg-light border p-4 rounded shadow-sm">
+          <h3 class="text-center fw-bold mb-4">Amenity Requests</h3>
 
-          <!-- Pagination -->
-          <div class="d-flex justify-content-center mt-3">
-            <nav>
-              <ul class="pagination mb-0">
-                <li class="page-item"><a class="page-link" href="#"><i class="bi bi-chevron-double-left"></i></a></li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item"><a class="page-link" href="#">4</a></li>
-                <li class="page-item"><a class="page-link" href="#">5</a></li>
-                <li class="page-item"><a class="page-link" href="#">...</a></li>
-                <li class="page-item"><a class="page-link" href="#">29</a></li>
-                <li class="page-item"><a class="page-link" href="#"><i class="bi bi-chevron-double-right"></i></a></li>
-              </ul>
-            </nav>
-          </div>
+          <?php if (empty($schedule_requests)): ?>
+            <p class="text-center text-muted">No amenity requests found.</p>
+          <?php else: ?>
+            <div class="table-responsive">
+              <table class="table table-bordered text-center align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>User ID</th>
+                    <th>House ID</th>
+                    <th>Date</th>
+                    <th>Amenity</th>
+                    <th>Message</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($schedule_requests as $req): ?>
+                    <tr>
+                      <td><?= htmlspecialchars($req['homeowner_id']) ?></td>
+                      <td><?= htmlspecialchars($req['house_id']) ?></td>
+                      <td><?= htmlspecialchars($req['request_date']) ?></td>
+                      <td><?= htmlspecialchars($req['amenity_name']) ?></td>
+                      <td><?= htmlspecialchars($req['message']) ?></td>
+                      <td><?= htmlspecialchars($req['time_start']) ?> - <?= htmlspecialchars($req['time_end']) ?></td>
+                      <td>
+                        <?php if ($req['status'] === 'pending'): ?>
+                          <form action="update_schedule_status.php" method="POST" class="d-inline">
+                            <input type="hidden" name="id" value="<?= $req['id'] ?>">
+                            <input type="hidden" name="action" value="approve">
+                            <button type="submit" class="btn btn-success btn-sm mb-1">Approve</button>
+                          </form>
+                          <form action="update_schedule_status.php" method="POST" class="d-inline">
+                            <input type="hidden" name="id" value="<?= $req['id'] ?>">
+                            <input type="hidden" name="action" value="reject">
+                            <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                          </form>
+                        <?php else: ?>
+                          <span class="badge bg-<?= $req['status'] === 'approved' ? 'success' : 'danger' ?>">
+                            <?= ucfirst($req['status']) ?>
+                          </span>
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          <?php endif; ?>
         </div>
       </div>
+    </div> <!-- end of row -->
 
     </div>
   </div>
@@ -964,6 +986,9 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
   });
 </script>
 
+
+
+
 <!-- amenities section -->
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -1001,6 +1026,48 @@ $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
     });
   });
 </script>
+
+
+
+<!-- script for paging in amenitiies -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const amenities = document.querySelectorAll("#viewAmenitiesSection .carousel-container");
+  const dots = document.querySelectorAll(".dot-pagination .dot");
+  const nextBtn = document.getElementById("nextBtn");
+  const prevBtn = document.getElementById("prevBtn");
+
+  let currentAmenityIndex = 0;
+  let fakeDotIndex = 0; // Always loops 0-6 (7 dots)
+
+  function updateCarousel() {
+    // Show current amenity
+    amenities.forEach((el, i) => {
+      el.style.display = i === currentAmenityIndex ? "block" : "none";
+    });
+
+    // Highlight fake dot
+    dots.forEach(dot => dot.classList.remove("active-dot"));
+    dots[fakeDotIndex].classList.add("active-dot");
+  }
+
+  nextBtn.addEventListener("click", () => {
+    currentAmenityIndex = (currentAmenityIndex + 1) % amenities.length;
+    fakeDotIndex = (fakeDotIndex + 1) % dots.length;
+    updateCarousel();
+  });
+
+  prevBtn.addEventListener("click", () => {
+    currentAmenityIndex = (currentAmenityIndex - 1 + amenities.length) % amenities.length;
+    fakeDotIndex = (fakeDotIndex - 1 + dots.length) % dots.length;
+    updateCarousel();
+  });
+
+  updateCarousel(); // Initialize
+});
+</script>
+
+
 
 
 

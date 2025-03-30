@@ -133,3 +133,43 @@ html {
     font-weight: bold;
   }
   
+  .dot-pagination {
+    display: flex;
+    gap: 5px;
+  }
+  
+  .dot {
+    width: 12px;
+    height: 12px;
+    background-color: #ddd;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .active-dot {
+    background-color: #000000;
+  }
+  
+  
+  .carousel-slide {
+    transition: transform 0.5s ease-in-out;
+    opacity: 0;
+    transform: translateX(100%);
+    z-index: 0;
+  }
+  
+  .carousel-slide.active {
+    opacity: 1;
+    transform: translateX(0);
+    z-index: 1;
+  }
+  
+  .carousel-slide.slide-left {
+    transform: translateX(-100%);
+  }
+  
+  .carousel-slide.slide-right {
+    transform: translateX(100%);
+  }
+  

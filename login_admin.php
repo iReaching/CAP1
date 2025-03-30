@@ -22,6 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $row = $result->fetch_assoc();
         if (password_verify($password, $row["password"])) {
             $_SESSION["user_id"] = $row["user_id"];
+            $_SESSION["role"] = "admin";
             $_SESSION["login_success"] = "Welcome back, Admin!";
             header("Location: l_admin.php");
             exit();

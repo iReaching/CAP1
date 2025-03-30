@@ -44,9 +44,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // After user registration is successful
-    $stmt = $conn->prepare("INSERT INTO user_profiles (user_id) VALUES (?)");
-    $stmt->bind_param("s", $user_id);
+    $defaultProfilePic = './images/profile.png';
+    $stmt = $conn->prepare("INSERT INTO user_profiles (user_id, full_name, contact_number, profile_pic) VALUES (?, '', '', ?)");
+    $stmt->bind_param("ss", $user_id, $defaultProfilePic);
     $stmt->execute();
+
 
 
     header("Location: $redirectPage");

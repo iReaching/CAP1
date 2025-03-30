@@ -24,6 +24,14 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 
+// Fetch amenities from the database
+$amenities = [];
+$stmt = $conn->query("SELECT * FROM amenities");
+if ($stmt && $stmt->num_rows > 0) {
+    $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
+}
+
+
 ?>
 
 
@@ -184,98 +192,104 @@ if (isset($_SESSION['user_id'])) {
       
       <!-- Facilities Carousel -->
       <div class="col-md-6 text-center px-5">
-        <div class="carousel-container border rounded p-3">
-          <img src="./images/facility1.jpg" class="img-fluid border rounded mb-3" alt="Facility" style="max-height: 300px; object-fit: cover;">
-          
-          <div class="form-control text-center fw-semibold">Clubhouse</div>
-
-          
-          <div class="form-floating mb-3">
-            <textarea class="form-control" id="facilityDesc" style="height: 230px;" readonly>A building or area used for social or recreational activities, serving as a central gathering place for residents</textarea>
-            <label for="facilityDesc">Description</label>
-          </div>
-
-          <div class="d-flex justify-content-center gap-3">
+        <div class="border rounded p-3 bg-white shadow-sm">
+          <div id="viewAmenitiesSection">
+            <?php foreach ($amenities as $index => $amenity): ?>
+              <div class="carousel-container amenity-item <?= $index === 0 ? 'active' : '' ?>" style="<?= $index !== 0 ? 'display: none;' : '' ?>">
+                <img src="<?= htmlspecialchars($amenity['image']) ?>" class="img-fluid border rounded mb-3" alt="Facility" style="max-height: 300px; object-fit: cover;">
+                <div class="form-control text-center fw-semibold mb-3"><?= htmlspecialchars($amenity['name']) ?></div>
+                <div class="form-control text-start mb-3" style="height: 150px; overflow-y: auto;"><?= nl2br(htmlspecialchars($amenity['description'])) ?></div>
+              </div>
+            <?php endforeach; ?>
           </div>
 
           <!-- Dot Indicators with Prev/Next -->
-            <div class="mt-3 d-flex justify-content-center align-items-center gap-2">
-            <!-- Prev Button -->
-            <button class="btn btn-sm btn-outline-secondary rounded-circle" id="prevDot" aria-label="Previous">
-                <i class="bi bi-chevron-left"></i>
+          <div class="mt-3 d-flex justify-content-center align-items-center gap-2 dot-pagination">
+            <button class="btn btn-sm btn-outline-secondary rounded-circle" id="prevBtn" aria-label="Previous">
+              <i class="bi bi-chevron-left"></i>
             </button>
 
-            <!-- Dots -->
-            <div>
-                <span class="dot mx-1"></span>
-                <span class="dot mx-1"></span>
-                <span class="dot mx-1"></span>
-                <span class="dot mx-1 active-dot"></span>
-                <span class="dot mx-1"></span>
-                <span class="dot mx-1"></span>
-                <span class="dot mx-1"></span>
-            </div>
+            <?php foreach ($amenities as $i => $dot): ?>
+              <span class="dot <?= $i === 0 ? 'active-dot' : '' ?> mx-1"></span>
+            <?php endforeach; ?>
 
-            <!-- Next Button -->
-            <button class="btn btn-sm btn-outline-secondary rounded-circle" id="nextDot" aria-label="Next">
-                <i class="bi bi-chevron-right"></i>
+            <button class="btn btn-sm btn-outline-secondary rounded-circle" id="nextBtn" aria-label="Next">
+              <i class="bi bi-chevron-right"></i>
             </button>
-            </div>
+          </div>
         </div>
-    </div>
+      </div>
 
-      <!-- Schedule Request Form -->
-        <div class="col-md-6">
+
+
+
+
+        <!-- Schedule Request Form -->
+          <div class="col-md-6">
             <div class="bg-light border p-4 rounded shadow-sm">
-                <h3 class="text-center fw-bold mb-4">Schedule Amenity</h3>
+              <h3 class="text-center fw-bold mb-4">Schedule Amenity</h3>
 
-                <form id="scheduleForm">
+              <form id="scheduleForm" action="book_amenity.php" method="POST">
+                
+                <!-- Hidden homeowner_id -->
+                <input type="hidden" name="homeowner_id" value="<?php echo htmlspecialchars($_SESSION['user_id']); ?>">
+
+                <!-- Full Name -->
+                <!-- Display Full Name (for display only) -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Full Name</label>
-                    <input type="text" name="name" class="form-control" required>
+                  <label class="form-label fw-semibold">Full Name</label>
+                  <input type="text" class="form-control" value="<?php echo htmlspecialchars($profile['full_name']); ?>" readonly>
                 </div>
 
+                <!-- House ID -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">House ID</label>
-                    <input type="text" name="house_id" class="form-control" required>
+                  <label class="form-label fw-semibold">House ID</label>
+                  <input type="text" name="house_id" class="form-control" required>
                 </div>
 
+                <!-- Date -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Date</label>
-                    <input type="date" name="date" class="form-control" required>
+                  <label class="form-label fw-semibold">Date</label>
+                  <input type="date" name="date" class="form-control" required>
                 </div>
 
+                <!-- Message -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Message / Purpose</label>
-                    <textarea name="message" class="form-control" rows="2" required></textarea>
+                  <label class="form-label fw-semibold">Message / Purpose</label>
+                  <textarea name="message" class="form-control" rows="2" required></textarea>
                 </div>
 
+                <!-- Amenity Type (dynamic from DB) -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Amenity Type</label>
-                    <select name="type" class="form-select" required>
+                  <label class="form-label fw-semibold">Amenity Type</label>
+                  <select name="amenity_id" class="form-select" required>
                     <option value="" disabled selected>Select Amenity</option>
-                    <option value="Clubhouse">Clubhouse</option>
-                    <option value="Basketball Court">Basketball Court</option>
-                    <option value="Pool">Pool</option>
-                    <!-- Add more options as needed -->
-                    </select>
+                    <?php foreach ($amenities as $amenity): ?>
+                      <option value="<?= htmlspecialchars($amenity['id']) ?>">
+                        <?= htmlspecialchars($amenity['name']) ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
                 </div>
 
+                <!-- Time Interval -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Time Interval</label>
-                    <div class="input-group">
+                  <label class="form-label fw-semibold">Time Interval</label>
+                  <div class="input-group">
                     <input type="time" name="start_time" class="form-control" required>
                     <span class="input-group-text">to</span>
                     <input type="time" name="end_time" class="form-control" required>
-                    </div>
+                  </div>
                 </div>
 
+                <!-- Submit Button -->
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary">Submit Request</button>
+                  <button type="submit" class="btn btn-primary">Submit Request</button>
                 </div>
-            </form>
+              </form>
             </div>
-            </div>
+          </div>
+
         </div>
       </div>
 
@@ -491,6 +505,74 @@ if (isset($_SESSION['user_id'])) {
     </main>
   </div>
 </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+<!-- TOASTS SECTION (POP-UPS) -->
+
+
+
+<!-- amenities, right side section, borrowing amenities) -->
+<?php if (isset($_SESSION['update_success']) || isset($_SESSION['update_error'])): ?>
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+    <div id="toastMessage" class="toast align-items-center text-bg-<?php echo isset($_SESSION['update_success']) ? 'success' : 'danger'; ?> border-0 show" role="alert">
+      <div class="d-flex">
+        <div class="toast-body">
+          <?php
+            echo $_SESSION['update_success'] ?? $_SESSION['update_error'];
+            unset($_SESSION['update_success'], $_SESSION['update_error']);
+          ?>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+<?php endif; ?>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -933,17 +1015,48 @@ if (isset($_SESSION['user_id'])) {
 </script>
 
 
-<!-- for amenities section -->
-<script>
-  document.getElementById("scheduleForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    const modal = new bootstrap.Modal(document.getElementById("scheduleSuccessModal"));
-    modal.show();
 
-    // Optional: Reset form
-    this.reset();
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const slides = document.querySelectorAll(".amenity-item");
+  const dots = document.querySelectorAll(".dot-pagination .dot");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+
+  let currentIndex = 0;
+
+  function showSlide(index) {
+    slides.forEach((slide, i) => {
+      slide.style.display = (i === index) ? "block" : "none";
+      dots[i].classList.toggle("active-dot", i === index);
+    });
+  }
+
+  nextBtn.addEventListener("click", function () {
+    currentIndex = (currentIndex + 1) % slides.length;
+    showSlide(currentIndex);
   });
+
+  prevBtn.addEventListener("click", function () {
+    currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+    showSlide(currentIndex);
+  });
+
+  // Optional: Clicking dots
+  dots.forEach((dot, i) => {
+    dot.addEventListener("click", () => {
+      currentIndex = i;
+      showSlide(currentIndex);
+    });
+  });
+
+  // Initialize
+  showSlide(currentIndex);
+});
 </script>
+
+
 
 
 
