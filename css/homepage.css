@@ -173,3 +173,55 @@ html {
     transform: translateX(100%);
   }
   
+  /* Add some background color to the inactive tabs */
+.nav-pills .nav-link {
+  background-color: #f8f9fa; /* Light background for inactive tabs */
+  border-radius: 0;
+}
+
+.nav-pills .nav-link.active {
+  background-color: #0d6efd; /* Active tab color */
+  color: white;
+}
+
+.nav-pills .nav-link:hover {
+  background-color: #007bff; /* Hover effect */
+  color: white;
+}
+
+
+/* Styling for the tab buttons */
+.tab-btn {
+  position: relative;
+  text-align: center;
+  padding: 10px 0;
+  border: none;
+  background-color: transparent;
+  transition: all 0.3s;
+}
+
+/* The indicator under active tab */
+.tabs-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  width: 0;
+  background-color: #007bff; /* Blue color */
+  transition: all 0.3s ease-in-out;
+}
+
+/* Active tab styles */
+.tab-btn.active {
+  background-color: #007bff;
+  color: white;
+}
+
+/* Content sections - hidden by default */
+.tab-content {
+  display: none;
+}
+
+/* When a section is active, display it */
+.tab-content.active {
+  display: block;
+}

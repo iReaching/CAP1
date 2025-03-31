@@ -40,6 +40,9 @@ $schedule_stmt = $conn->query("
 ");
 $schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
 
+// Fetch items from database
+$sql = "SELECT * FROM items";
+$result = $conn->query($sql);
 ?>
 
 
@@ -306,6 +309,13 @@ $schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
         <div class="bg-light border p-4 rounded shadow-sm">
           <h3 class="text-center fw-bold mb-4">Amenity Requests</h3>
 
+          <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-info">
+              <?= htmlspecialchars($_SESSION['message']); ?>
+            </div>
+            <?php unset($_SESSION['message']); ?>
+          <?php endif; ?>
+
           <?php if (empty($schedule_requests)): ?>
             <p class="text-center text-muted">No amenity requests found.</p>
           <?php else: ?>
@@ -357,6 +367,7 @@ $schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
           <?php endif; ?>
         </div>
       </div>
+
     </div> <!-- end of row -->
 
     </div>
@@ -385,188 +396,189 @@ $schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
 
 
 
- <!-- items section -->
+<!-- items section -->
 <div class="container-fluid">
   <div class="row">
-    
     <!-- Sidebar -->
     <nav class="col-md-2 bg-light vh-100 d-flex flex-column align-items-start py-4 px-3 border-end">
-    <div id="highlightBar" class="position-absolute start-0 top-0 bg-primary" style="width: 4px; height: 42px; transition: top 0.3s ease;"></div>
-
       <a href="#items-section" class="btn w-100 text-start mb-2 fw-bold active" id="tab-item">ITEM</a>
       <a href="#schedule-section" class="btn w-100 text-start mb-2 fw-bold" id="tab-schedule">SCHEDULE</a>
     </nav>
+
     <!-- Content Area -->
     <main class="col-md-10 py-4 px-5">
-  <section class="mt-5" id="items-section">
-  <div class="container-fluid">
-  <div class="row">
-  
-  <!-- Single Item Card Start -->
-  <div class="card mb-3 shadow-sm">
-    <div class="card-body">
-      <div class="row g-3 align-items-center">
-        <!-- Item Name -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Name</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="Lawn Mower" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-pencil-square"></i>
-            </span>
+      <section class="mt-5" id="items-section">
+        <div class="container-fluid">
+          <div class="row">
+            <!-- Item Tabs for View, Add, Edit -->
+            <div class="col-md-12 mb-3">
+              <div class="mb-4 border rounded overflow-hidden">
+                <div class="d-flex">
+                  <!-- Button for View Items -->
+                  <button id="tab-view-items" class="tab-btn w-50 btn border-0 fw-bold py-3 bg-black text-white">VIEW ITEMS</button>
+                  <!-- Button for Add Item -->
+                  <button id="tab-add-item" class="tab-btn w-50 btn border-0 fw-bold py-3 bg-white text-dark">ADD ITEM</button>
+                  <!-- Button for Edit Item -->
+                  <button id="tab-edit-item" class="tab-btn w-50 btn border-0 fw-bold py-3 bg-white text-dark">EDIT ITEM</button>
+                </div>
+
+                <!-- Active tab indicator -->
+                <div id="tabs-indicator" class="tabs-indicator"></div>
+              </div>
+            </div>
+
+            <!-- Item Content Sections -->
+            <div class="col-md-12">
+              <!-- View Items Section -->
+              <div id="view-items" class="tab-content active">
+                <h4 class="text-center mb-4">View Items</h4>
+                <?php if ($result->num_rows > 0): ?>
+                  <?php while ($item = $result->fetch_assoc()): ?>
+                    <div class="col-md-4 mb-3">
+                      <div class="card shadow-sm">
+                        <div class="card-body">
+                          <h5 class="card-title"><?= htmlspecialchars($item['name']) ?></h5>
+                          <img src="<?= htmlspecialchars($item['image']) ?>" class="img-fluid mb-3" alt="<?= htmlspecialchars($item['name']) ?>" />
+                          <p class="card-text"><?= htmlspecialchars($item['description']) ?></p>
+                          <p>Available: <?= htmlspecialchars($item['available']) ?></p>
+                          <p>Borrowed: <?= htmlspecialchars($item['borrowed']) ?></p>
+                        </div>
+                      </div>
+                    </div>
+                  <?php endwhile; ?>
+                <?php else: ?>
+                  <p>No items found.</p>
+                <?php endif; ?>
+              </div>
+
+              <!-- Add Item Section -->
+              <div id="add-item" class="tab-content">
+                <h4 class="text-center mb-4">Add New Item</h4>
+                <form action="add_item.php" method="POST" enctype="multipart/form-data">
+                  <div class="mb-3">
+                    <label for="item-name" class="form-label">Item Name</label>
+                    <input type="text" class="form-control" id="item-name" name="name" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="item-description" class="form-label">Item Description</label>
+                    <textarea class="form-control" id="item-description" name="description" rows="3" required></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label for="item-available" class="form-label">Available Item</label>
+                    <input type="number" class="form-control" id="item-available" name="available" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="item-image" class="form-label">Item Image</label>
+                    <input type="file" class="form-control" id="item-image" name="image" required>
+                  </div>
+                  <button type="submit" class="btn btn-success">Add Item</button>
+                </form>
+              </div>
+
+              <!-- Edit Item Section -->
+              <div id="edit-item" class="tab-content">
+                <h4 class="text-center mb-4">Edit Existing Item</h4>
+                <form action="edit_item.php" method="POST" enctype="multipart/form-data">
+                  <div class="mb-3">
+                    <label for="edit-item-select" class="form-label">Select Item</label>
+                    <select name="item_id" class="form-select" id="edit-item-select" required>
+                      <option value="" disabled selected>Select an item</option>
+                      <?php foreach ($result as $item): ?>
+                        <option value="<?php echo $item['id']; ?>"><?php echo htmlspecialchars($item['name']); ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="edit-item-name" class="form-label">New Name</label>
+                    <input type="text" name="name" class="form-control" id="edit-item-name" placeholder="Leave blank to keep current name">
+                  </div>
+                  <div class="mb-3">
+                    <label for="edit-item-description" class="form-label">New Description</label>
+                    <textarea name="description" class="form-control" id="edit-item-description" placeholder="Leave blank to keep current description" rows="3"></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label for="edit-item-available" class="form-label">New Available Item</label>
+                    <input type="number" name="available" class="form-control" id="edit-item-available" placeholder="Leave blank to keep current quantity">
+                  </div>
+                  <div class="mb-3">
+                    <label for="edit-item-image" class="form-label">New Image</label>
+                    <input type="file" name="image" class="form-control" id="edit-item-image">
+                  </div>
+                  <button type="submit" class="btn btn-warning">Update Item</button>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
-
-        <!-- Image Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Image</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="lawnmower.jpg" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-eye me-2"></i>
-              <i class="bi bi-pencil-square"></i>
-            </span>
-          </div>
-        </div>
-
-        <!-- Quantity Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Item on-hand / Available / Borrowed</label>
-          <div class="d-flex gap-2">
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
- 
-
-  <div class="card mb-3 shadow-sm">
-    <div class="card-body">
-      <div class="row g-3 align-items-center">
-        <!-- Item Name -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Name</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="Lawn Mower" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-pencil-square"></i>
-            </span>
-          </div>
-        </div>
-
-        <!-- Image Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Image</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="lawnmower.jpg" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-eye me-2"></i>
-              <i class="bi bi-pencil-square"></i>
-            </span>
-          </div>
-        </div>
-
-        <!-- Quantity Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Item on-hand / Available / Borrowed</label>
-          <div class="d-flex gap-2">
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- Single Item Card End -->
-
-  <!-- Repeat the card above for more items... -->
-
-  <!-- Pagination -->
-  <nav aria-label="Items pagination">
-    <ul class="pagination justify-content-center">
-      <li class="page-item disabled"><a class="page-link">«</a></li>
-      <li class="page-item active"><a class="page-link">1</a></li>
-      <li class="page-item"><a class="page-link">2</a></li>
-      <li class="page-item"><a class="page-link">3</a></li>
-      <li class="page-item disabled"><a class="page-link">...</a></li>
-      <li class="page-item"><a class="page-link">15</a></li>
-      <li class="page-item"><a class="page-link">»</a></li>
-    </ul>
-  </nav>
-</section>
+      </section>
 
       <!-- SCHEDULE SECTION (hidden by default) -->
       <section id="schedule-section" style="display: none;">
         <!-- Schedule Tabs -->
-<div class="mb-4 border rounded overflow-hidden">
-  <div class="d-flex">
-    <button id="tab-ongoing" class="w-50 btn border-0 fw-bold py-3 bg-info text-white">ONGOING</button>
-    <button id="tab-borrowed" class="w-50 btn border-0 fw-bold py-3 bg-white text-dark">BORROWED</button>
-  </div>
-</div>
+        <div class="mb-4 border rounded overflow-hidden">
+          <div class="d-flex">
+            <button id="tab-ongoing" class="w-50 btn border-0 fw-bold py-3 bg-info text-white">ONGOING</button>
+            <button id="tab-borrowed" class="w-50 btn border-0 fw-bold py-3 bg-white text-dark">BORROWED</button>
+          </div>
+        </div>
 
-<!-- Ongoing Table -->
-<div id="ongoing-table">
-  <div class="table-responsive border rounded p-3">
-    <table class="table table-bordered align-middle text-center">
-      <thead class="table-light">
-        <tr>
-          <th>Borrower's NAME</th>
-          <th>Borrowed Item</th>
-          <th>Time Start</th>
-          <th>Time Returned</th>
-          <th>Date Start</th>
-          <th>Date Returned</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-        </tr>
-        <!-- Repeat <tr> as needed -->
-      </tbody>
-    </table>
-  </div>
-</div>
+        <!-- Ongoing Table -->
+        <div id="ongoing-table">
+          <div class="table-responsive border rounded p-3">
+            <table class="table table-bordered align-middle text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>Borrower's NAME</th>
+                  <th>Borrowed Item</th>
+                  <th>Time Start</th>
+                  <th>Time Returned</th>
+                  <th>Date Start</th>
+                  <th>Date Returned</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input class="form-control" readonly></td>
+                  <td><input class="form-control" readonly></td>
+                  <td><input class="form-control" readonly></td>
+                  <td><input class="form-control" readonly></td>
+                  <td><input class="form-control" readonly></td>
+                  <td><input class="form-control" readonly></td>
+                </tr>
+                <!-- Repeat <tr> as needed -->
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-<!-- Borrowed Table (Initially Hidden) -->
-<div id="borrowed-table" style="display: none;">
-  <div class="table-responsive border rounded p-3">
-    <table class="table table-bordered align-middle text-center">
-      <thead class="table-light">
-        <tr>
-          <th>Borrower's NAME</th>
-          <th>Borrowed Item</th>
-          <th>Time Start</th>
-          <th>Time Returned</th>
-          <th>Date Start</th>
-          <th>Date Returned</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-        </tr>
-        <!-- Repeat <tr> as needed -->
-      </tbody>
-    </table>
-  </div>
-</div>
-
+        <!-- Borrowed Table (Initially Hidden) -->
+        <div id="borrowed-table" style="display: none;">
+          <div class="table-responsive border rounded p-3">
+            <table class="table table-bordered align-middle text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>Borrower's NAME</th>
+                  <th>Borrowed Item</th>
+                  <th>Time Start</th>
+                  <th>Time Returned</th>
+                  <th>Date Start</th>
+                  <th>Date Returned</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input class="form-control" readonly></td>
+                  <td><input class="form-control" readonly></td>
+                  <td><input class="form-control" readonly></td>
+                  <td><input class="form-control" readonly></td>
+                  <td><input class="form-control" readonly></td>
+                  <td><input class="form-control" readonly></td>
+                </tr>
+                <!-- Repeat <tr> as needed -->
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
     </main>
   </div>
@@ -921,33 +933,6 @@ $schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
 
 
 
-<!-- items section to animate the highlighting for the 3 sections -->
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const viewBtn = document.getElementById("btnViewAmenities");
-    const addBtn = document.getElementById("btnAddAmenity");
-    const editBtn = document.getElementById("btnEditAmenity");
-
-    const viewSection = document.getElementById("viewAmenitiesSection");
-    const addSection = document.getElementById("addAmenitySection");
-    const editSection = document.getElementById("editAmenitySection");
-
-    function toggleTabs(activeBtn, activeSection) {
-      [viewBtn, addBtn, editBtn].forEach(btn => btn.classList.remove("btn-primary"));
-      [viewBtn, addBtn, editBtn].forEach(btn => btn.classList.add("btn-outline-primary"));
-      activeBtn.classList.remove("btn-outline-primary");
-      activeBtn.classList.add("btn-primary");
-
-      [viewSection, addSection, editSection].forEach(sec => sec.style.display = "none");
-      activeSection.style.display = "block";
-    }
-
-    viewBtn.addEventListener("click", () => toggleTabs(viewBtn, viewSection));
-    addBtn.addEventListener("click", () => toggleTabs(addBtn, addSection));
-    editBtn.addEventListener("click", () => toggleTabs(editBtn, editSection));
-  });
-</script>
-
 
 
 
@@ -985,6 +970,72 @@ $schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
     });
   });
 </script>
+
+
+<!-- script for the tabs in items section (VIEW/EDIT/ADD) -->
+
+<!-- New JavaScript Code for Items Section -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // Get all the tab buttons
+  const tabViewItems = document.getElementById("tab-view-items");
+  const tabAddItem = document.getElementById("tab-add-item");
+  const tabEditItem = document.getElementById("tab-edit-item");
+
+  // Get all the item content sections
+  const viewItemsSection = document.getElementById("view-items");
+  const addItemSection = document.getElementById("add-item");
+  const editItemSection = document.getElementById("edit-item");
+
+  // Get the indicator div
+  const indicator = document.getElementById("tabs-indicator");
+
+  // Function to switch between sections and move the indicator
+  function showSection(tab, section) {
+    // Remove active class from all buttons and sections
+    tabViewItems.classList.remove("bg-black", "text-white");
+    tabAddItem.classList.remove("bg-white", "text-dark");
+    tabEditItem.classList.remove("bg-white", "text-dark");
+
+    // Reset the styles for all tabs
+    tabViewItems.classList.add("bg-white", "text-dark");
+    tabAddItem.classList.add("bg-white", "text-dark");
+    tabEditItem.classList.add("bg-white", "text-dark");
+
+    // Hide all sections
+    viewItemsSection.classList.remove("active");
+    addItemSection.classList.remove("active");
+    editItemSection.classList.remove("active");
+
+    // Set the clicked tab to active
+    tab.classList.add("bg-black", "text-white");
+    section.classList.add("active"); // Show the corresponding section
+
+    // Move the indicator
+    const tabRect = tab.getBoundingClientRect();
+    indicator.style.width = `${tabRect.width}px`;
+    indicator.style.left = `${tabRect.left - tab.offsetParent.getBoundingClientRect().left}px`;
+  }
+
+  // Add event listeners for each tab button
+  tabViewItems.addEventListener("click", function () {
+    showSection(tabViewItems, viewItemsSection);
+  });
+
+  tabAddItem.addEventListener("click", function () {
+    showSection(tabAddItem, addItemSection);
+  });
+
+  tabEditItem.addEventListener("click", function () {
+    showSection(tabEditItem, editItemSection);
+  });
+
+  // Default section to display on page load (View Items)
+  showSection(tabViewItems, viewItemsSection);
+});
+</script>
+
+
 
 
 
