@@ -43,6 +43,17 @@ $schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
 // Fetch items from database
 $sql = "SELECT * FROM items";
 $result = $conn->query($sql);
+
+// Fetch scheduled item requests with item name and homeowner info
+$item_requests_stmt = $conn->query("
+  SELECT i.*, u.user_id, u.role, itm.name AS item_name
+  FROM item_schedule i
+  JOIN users u ON i.homeowner_id = u.user_id
+  JOIN items itm ON i.item_id = itm.id
+  ORDER BY i.request_date DESC
+");
+$item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
+
 ?>
 
 
@@ -407,52 +418,50 @@ $result = $conn->query($sql);
 
     <!-- Content Area -->
     <main class="col-md-10 py-4 px-5">
-      <section class="mt-5" id="items-section">
+      <section id="items-section">
         <div class="container-fluid">
-          <div class="row">
-            <!-- Item Tabs for View, Add, Edit -->
+          <!-- Item Tabs for View, Add, Edit -->
             <div class="col-md-12 mb-3">
               <div class="mb-4 border rounded overflow-hidden">
                 <div class="d-flex">
                   <!-- Button for View Items -->
-                  <button id="tab-view-items" class="tab-btn w-50 btn border-0 fw-bold py-3 bg-black text-white">VIEW ITEMS</button>
+                  <button id="tab-view-items" class="w-100 btn border-0 fw-bold py-3 bg-info text-white">VIEW ITEMS</button>
                   <!-- Button for Add Item -->
-                  <button id="tab-add-item" class="tab-btn w-50 btn border-0 fw-bold py-3 bg-white text-dark">ADD ITEM</button>
+                  <button id="tab-add-item" class="w-100 btn border-0 fw-bold py-3 bg-white text-dark">ADD ITEM</button>
                   <!-- Button for Edit Item -->
-                  <button id="tab-edit-item" class="tab-btn w-50 btn border-0 fw-bold py-3 bg-white text-dark">EDIT ITEM</button>
+                  <button id="tab-edit-item" class="w-100 btn border-0 fw-bold py-3 bg-white text-dark">EDIT ITEM</button>
                 </div>
-
-                <!-- Active tab indicator -->
-                <div id="tabs-indicator" class="tabs-indicator"></div>
               </div>
             </div>
 
             <!-- Item Content Sections -->
             <div class="col-md-12">
               <!-- View Items Section -->
-              <div id="view-items" class="tab-content active">
+              <div id="view-items-section">
                 <h4 class="text-center mb-4">View Items</h4>
                 <?php if ($result->num_rows > 0): ?>
-                  <?php while ($item = $result->fetch_assoc()): ?>
-                    <div class="col-md-4 mb-3">
-                      <div class="card shadow-sm">
-                        <div class="card-body">
-                          <h5 class="card-title"><?= htmlspecialchars($item['name']) ?></h5>
-                          <img src="<?= htmlspecialchars($item['image']) ?>" class="img-fluid mb-3" alt="<?= htmlspecialchars($item['name']) ?>" />
-                          <p class="card-text"><?= htmlspecialchars($item['description']) ?></p>
-                          <p>Available: <?= htmlspecialchars($item['available']) ?></p>
-                          <p>Borrowed: <?= htmlspecialchars($item['borrowed']) ?></p>
+                  <div class="row">
+                    <?php while ($item = $result->fetch_assoc()): ?>
+                      <div class="col-md-4 mb-4">
+                        <div class="card shadow-sm h-100">
+                          <div class="card-body">
+                            <h5 class="card-title"><?= htmlspecialchars($item['name']) ?></h5>
+                            <img src="uploads/<?= htmlspecialchars($item['image']) ?>" class="img-fluid mb-3" alt="<?= htmlspecialchars($item['name']) ?>" />
+                            <p class="card-text"><?= htmlspecialchars($item['description']) ?></p>
+                            <p>Available: <?= htmlspecialchars($item['available']) ?></p>
+                            <p>Borrowed: <?= htmlspecialchars($item['borrowed']) ?></p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  <?php endwhile; ?>
+                    <?php endwhile; ?>
+                  </div>
                 <?php else: ?>
                   <p>No items found.</p>
                 <?php endif; ?>
               </div>
 
               <!-- Add Item Section -->
-              <div id="add-item" class="tab-content">
+              <div id="add-item-section" style="display: none;">
                 <h4 class="text-center mb-4">Add New Item</h4>
                 <form action="add_item.php" method="POST" enctype="multipart/form-data">
                   <div class="mb-3">
@@ -476,7 +485,7 @@ $result = $conn->query($sql);
               </div>
 
               <!-- Edit Item Section -->
-              <div id="edit-item" class="tab-content">
+              <div id="edit-item-section" style="display: none;">
                 <h4 class="text-center mb-4">Edit Existing Item</h4>
                 <form action="edit_item.php" method="POST" enctype="multipart/form-data">
                   <div class="mb-3">
@@ -508,73 +517,93 @@ $result = $conn->query($sql);
                 </form>
               </div>
             </div>
-          </div>
+
         </div>
       </section>
 
-      <!-- SCHEDULE SECTION (hidden by default) -->
+      <!-- SCHEDULE SECTION (admin view of scheduled items) -->
       <section id="schedule-section" style="display: none;">
-        <!-- Schedule Tabs -->
         <div class="mb-4 border rounded overflow-hidden">
           <div class="d-flex">
-            <button id="tab-ongoing" class="w-50 btn border-0 fw-bold py-3 bg-info text-white">ONGOING</button>
-            <button id="tab-borrowed" class="w-50 btn border-0 fw-bold py-3 bg-white text-dark">BORROWED</button>
+            <button id="tab-ongoing" class="w-50 btn border-0 fw-bold py-3 bg-info text-white">PENDING</button>
+            <button id="tab-borrowed" class="w-50 btn border-0 fw-bold py-3 bg-white text-dark">DECIDED</button>
           </div>
         </div>
 
-        <!-- Ongoing Table -->
+        <!-- PENDING REQUESTS -->
         <div id="ongoing-table">
           <div class="table-responsive border rounded p-3">
             <table class="table table-bordered align-middle text-center">
               <thead class="table-light">
                 <tr>
-                  <th>Borrower's NAME</th>
-                  <th>Borrowed Item</th>
+                  <th>Homeowner ID</th>
+                  <th>Item</th>
+                  <th>Date</th>
                   <th>Time Start</th>
-                  <th>Time Returned</th>
-                  <th>Date Start</th>
-                  <th>Date Returned</th>
+                  <th>Time End</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td><input class="form-control" readonly></td>
-                  <td><input class="form-control" readonly></td>
-                  <td><input class="form-control" readonly></td>
-                  <td><input class="form-control" readonly></td>
-                  <td><input class="form-control" readonly></td>
-                  <td><input class="form-control" readonly></td>
-                </tr>
-                <!-- Repeat <tr> as needed -->
+                <?php foreach ($item_schedule_requests as $req): ?>
+                  <?php if ($req['status'] === 'pending'): ?>
+                    <tr>
+                      <td><?= htmlspecialchars($req['user_id']) ?></td>
+                      <td><?= htmlspecialchars($req['item_name']) ?></td>
+                      <td><?= htmlspecialchars($req['date_requested']) ?></td>
+                      <td><?= htmlspecialchars($req['time_start']) ?></td>
+                      <td><?= htmlspecialchars($req['time_end']) ?></td>
+                      <td>
+                        <form action="update_item_status.php" method="POST" class="d-inline">
+                          <input type="hidden" name="id" value="<?= $req['id'] ?>">
+                          <input type="hidden" name="action" value="approve">
+                          <button type="submit" class="btn btn-success btn-sm mb-1">Approve</button>
+                        </form>
+                        <form action="update_item_status.php" method="POST" class="d-inline">
+                          <input type="hidden" name="id" value="<?= $req['id'] ?>">
+                          <input type="hidden" name="action" value="reject">
+                          <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <?php endif; ?>
+                <?php endforeach; ?>
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Borrowed Table (Initially Hidden) -->
+        <!-- DECIDED REQUESTS -->
         <div id="borrowed-table" style="display: none;">
           <div class="table-responsive border rounded p-3">
             <table class="table table-bordered align-middle text-center">
               <thead class="table-light">
                 <tr>
-                  <th>Borrower's NAME</th>
-                  <th>Borrowed Item</th>
+                  <th>Homeowner ID</th>
+                  <th>Item</th>
+                  <th>Date</th>
                   <th>Time Start</th>
-                  <th>Time Returned</th>
-                  <th>Date Start</th>
-                  <th>Date Returned</th>
+                  <th>Time End</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td><input class="form-control" readonly></td>
-                  <td><input class="form-control" readonly></td>
-                  <td><input class="form-control" readonly></td>
-                  <td><input class="form-control" readonly></td>
-                  <td><input class="form-control" readonly></td>
-                  <td><input class="form-control" readonly></td>
-                </tr>
-                <!-- Repeat <tr> as needed -->
+                <?php foreach ($item_schedule_requests as $req): ?>
+                  <?php if ($req['status'] !== 'pending'): ?>
+                    <tr>
+                      <td><?= htmlspecialchars($req['user_id']) ?></td>
+                      <td><?= htmlspecialchars($req['item_name']) ?></td>
+                      <td><?= htmlspecialchars($req['date_requested']) ?></td>
+                      <td><?= htmlspecialchars($req['time_start']) ?></td>
+                      <td><?= htmlspecialchars($req['time_end']) ?></td>
+                      <td>
+                        <span class="badge bg-<?= $req['status'] === 'approved' ? 'success' : 'danger' ?>">
+                          <?= ucfirst($req['status']) ?>
+                        </span>
+                      </td>
+                    </tr>
+                  <?php endif; ?>
+                <?php endforeach; ?>
               </tbody>
             </table>
           </div>
@@ -972,69 +1001,6 @@ $result = $conn->query($sql);
 </script>
 
 
-<!-- script for the tabs in items section (VIEW/EDIT/ADD) -->
-
-<!-- New JavaScript Code for Items Section -->
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  // Get all the tab buttons
-  const tabViewItems = document.getElementById("tab-view-items");
-  const tabAddItem = document.getElementById("tab-add-item");
-  const tabEditItem = document.getElementById("tab-edit-item");
-
-  // Get all the item content sections
-  const viewItemsSection = document.getElementById("view-items");
-  const addItemSection = document.getElementById("add-item");
-  const editItemSection = document.getElementById("edit-item");
-
-  // Get the indicator div
-  const indicator = document.getElementById("tabs-indicator");
-
-  // Function to switch between sections and move the indicator
-  function showSection(tab, section) {
-    // Remove active class from all buttons and sections
-    tabViewItems.classList.remove("bg-black", "text-white");
-    tabAddItem.classList.remove("bg-white", "text-dark");
-    tabEditItem.classList.remove("bg-white", "text-dark");
-
-    // Reset the styles for all tabs
-    tabViewItems.classList.add("bg-white", "text-dark");
-    tabAddItem.classList.add("bg-white", "text-dark");
-    tabEditItem.classList.add("bg-white", "text-dark");
-
-    // Hide all sections
-    viewItemsSection.classList.remove("active");
-    addItemSection.classList.remove("active");
-    editItemSection.classList.remove("active");
-
-    // Set the clicked tab to active
-    tab.classList.add("bg-black", "text-white");
-    section.classList.add("active"); // Show the corresponding section
-
-    // Move the indicator
-    const tabRect = tab.getBoundingClientRect();
-    indicator.style.width = `${tabRect.width}px`;
-    indicator.style.left = `${tabRect.left - tab.offsetParent.getBoundingClientRect().left}px`;
-  }
-
-  // Add event listeners for each tab button
-  tabViewItems.addEventListener("click", function () {
-    showSection(tabViewItems, viewItemsSection);
-  });
-
-  tabAddItem.addEventListener("click", function () {
-    showSection(tabAddItem, addItemSection);
-  });
-
-  tabEditItem.addEventListener("click", function () {
-    showSection(tabEditItem, editItemSection);
-  });
-
-  // Default section to display on page load (View Items)
-  showSection(tabViewItems, viewItemsSection);
-});
-</script>
-
 
 
 
@@ -1116,6 +1082,37 @@ document.addEventListener("DOMContentLoaded", function () {
 
   updateCarousel(); // Initialize
 });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const btnView = document.getElementById("tab-view-items");
+    const btnAdd = document.getElementById("tab-add-item");
+    const btnEdit = document.getElementById("tab-edit-item");
+
+    const viewSection = document.getElementById("view-items-section");
+    const addSection = document.getElementById("add-item-section");
+    const editSection = document.getElementById("edit-item-section");
+
+    function switchTab(activeBtn, sectionToShow) {
+      [btnView, btnAdd, btnEdit].forEach(btn => {
+        btn.classList.remove("bg-info", "text-white");
+        btn.classList.add("bg-white", "text-dark");
+      });
+      activeBtn.classList.add("bg-info", "text-white");
+      activeBtn.classList.remove("bg-white", "text-dark");
+
+      [viewSection, addSection, editSection].forEach(sec => sec.style.display = "none");
+      sectionToShow.style.display = "block";
+    }
+
+    btnView.addEventListener("click", () => switchTab(btnView, viewSection));
+    btnAdd.addEventListener("click", () => switchTab(btnAdd, addSection));
+    btnEdit.addEventListener("click", () => switchTab(btnEdit, editSection));
+
+    // Show View tab by default
+    switchTab(btnView, viewSection);
+  });
 </script>
 
 

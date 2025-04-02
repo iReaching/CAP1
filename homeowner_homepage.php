@@ -30,8 +30,6 @@ $stmt = $conn->query("SELECT * FROM amenities");
 if ($stmt && $stmt->num_rows > 0) {
     $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
 }
-
-
 ?>
 
 
@@ -322,185 +320,131 @@ if ($stmt && $stmt->num_rows > 0) {
  <!-- items section -->
 <div class="container-fluid">
   <div class="row">
-    
     <!-- Sidebar -->
     <nav class="col-md-2 bg-light vh-100 d-flex flex-column align-items-start py-4 px-3 border-end">
-    <div id="highlightBar" class="position-absolute start-0 top-0 bg-primary" style="width: 4px; height: 42px; transition: top 0.3s ease;"></div>
-
+      <div id="highlightBar" class="position-absolute start-0 top-0 bg-primary" style="width: 4px; height: 42px; transition: top 0.3s ease;"></div>
       <a href="#items-section" class="btn w-100 text-start mb-2 fw-bold active" id="tab-item">ITEM</a>
       <a href="#schedule-section" class="btn w-100 text-start mb-2 fw-bold" id="tab-schedule">SCHEDULE</a>
     </nav>
+
     <!-- Content Area -->
     <main class="col-md-10 py-4 px-5">
-  <section class="mt-5" id="items-section">
-  <div class="container-fluid">
-  <div class="row">
-  
-  <!-- Single Item Card Start -->
-  <div class="card mb-3 shadow-sm">
-    <div class="card-body">
-      <div class="row g-3 align-items-center">
-        <!-- Item Name -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Name</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="Lawn Mower" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-pencil-square"></i>
-            </span>
+      <section class="mt-3" id="items-section">
+        <div class="container-fluid">
+          <h2 class="fw-bold mb-4">BORROW ITEM</h2>
+          <div class="row">
+            <!-- Left side: Paginated Item Display with JavaScript -->
+              <div class="col-md-6">
+                <div id="itemPaginationWrapper" class="border rounded p-3 bg-white shadow-sm">
+                  <?php
+                  $items_result = $conn->query("SELECT * FROM items");
+                  $items = $items_result->fetch_all(MYSQLI_ASSOC);
+                  foreach ($items as $index => $item): ?>
+                    <div class="item-slide <?= $index === 0 ? '' : 'd-none' ?>">
+                      <div class="card p-3 mb-3">
+                        <img src="uploads/<?= htmlspecialchars($item['image']) ?>" class="img-fluid rounded mb-2" style="max-height: 250px; object-fit: contain;" alt="<?= htmlspecialchars($item['name']) ?>">
+                        <div class="text-center fw-bold"><?= htmlspecialchars($item['name']) ?></div>
+                        <p class="small text-muted"><?= htmlspecialchars($item['description']) ?></p>
+                        <div class="d-flex justify-content-between">
+                          <span>Available: <?= $item['available'] ?></span>
+                          <span>Borrowed: <?= $item['borrowed'] ?></span>
+                        </div>
+                      </div>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+
+                <!-- Pagination -->
+                  <div class="d-flex justify-content-center align-items-center mt-3 gap-3">
+                    <button id="prevItemBtn" class="btn btn-outline-dark btn-sm rounded-circle">
+                      <i class="bi bi-chevron-left"></i>
+                    </button>
+
+                    <div id="itemPaginationDots" class="d-flex gap-3"></div>
+
+                    <button id="nextItemBtn" class="btn btn-outline-dark btn-sm rounded-circle">
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                  </div>
+
+              </div>
+
+
+            <!-- Right side: Borrowing Form -->
+            <div class="col-md-6">
+              <div class="card p-4 bg-light">
+                <h5 class="text-center fw-bold mb-4">Borrowing Item</h5>
+                <form action="schedule_item.php" method="POST">
+                  <div class="mb-3">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-control" name="request_date" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Message / Purpose</label>
+                    <textarea class="form-control" name="message" rows="3"></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Item Name</label>
+                    <select name="item_id" class="form-select" required>
+                      <option value="">Select Item</option>
+                      <?php $items_result = $conn->query("SELECT id, name FROM items");
+                      while ($it = $items_result->fetch_assoc()): ?>
+                        <option value="<?= $it['id'] ?>"><?= htmlspecialchars($it['name']) ?></option>
+                      <?php endwhile; ?>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Time Interval</label>
+                    <div class="d-flex gap-2">
+                      <input type="time" class="form-control" name="time_start" required>
+                      <span class="mt-2">to</span>
+                      <input type="time" class="form-control" name="time_end" required>
+                    </div>
+                  </div>
+                  <button class="btn btn-primary w-100">Submit Request</button>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
 
-        <!-- Image Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Image</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="lawnmower.jpg" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-eye me-2"></i>
-              <i class="bi bi-pencil-square"></i>
-            </span>
-          </div>
-        </div>
-
-        <!-- Quantity Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Item on-hand / Available / Borrowed</label>
-          <div class="d-flex gap-2">
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
- 
-
-  <div class="card mb-3 shadow-sm">
-    <div class="card-body">
-      <div class="row g-3 align-items-center">
-        <!-- Item Name -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Name</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="Lawn Mower" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-pencil-square"></i>
-            </span>
-          </div>
-        </div>
-
-        <!-- Image Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Image</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="lawnmower.jpg" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-eye me-2"></i>
-              <i class="bi bi-pencil-square"></i>
-            </span>
-          </div>
-        </div>
-
-        <!-- Quantity Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Item on-hand / Available / Borrowed</label>
-          <div class="d-flex gap-2">
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- Single Item Card End -->
-
-  <!-- Repeat the card above for more items... -->
-
-  <!-- Pagination -->
-  <nav aria-label="Items pagination">
-    <ul class="pagination justify-content-center">
-      <li class="page-item disabled"><a class="page-link">«</a></li>
-      <li class="page-item active"><a class="page-link">1</a></li>
-      <li class="page-item"><a class="page-link">2</a></li>
-      <li class="page-item"><a class="page-link">3</a></li>
-      <li class="page-item disabled"><a class="page-link">...</a></li>
-      <li class="page-item"><a class="page-link">15</a></li>
-      <li class="page-item"><a class="page-link">»</a></li>
-    </ul>
-  </nav>
-</section>
-
-      <!-- SCHEDULE SECTION (hidden by default) -->
+      <!-- Schedule Section -->
       <section id="schedule-section" style="display: none;">
-        <!-- Schedule Tabs -->
-<div class="mb-4 border rounded overflow-hidden">
-  <div class="d-flex">
-    <button id="tab-ongoing" class="w-50 btn border-0 fw-bold py-3 bg-info text-white">ONGOING</button>
-    <button id="tab-borrowed" class="w-50 btn border-0 fw-bold py-3 bg-white text-dark">BORROWED</button>
-  </div>
-</div>
-
-<!-- Ongoing Table -->
-<div id="ongoing-table">
-  <div class="table-responsive border rounded p-3">
-    <table class="table table-bordered align-middle text-center">
-      <thead class="table-light">
-        <tr>
-          <th>Borrower's NAME</th>
-          <th>Borrowed Item</th>
-          <th>Time Start</th>
-          <th>Time Returned</th>
-          <th>Date Start</th>
-          <th>Date Returned</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-        </tr>
-        <!-- Repeat <tr> as needed -->
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Borrowed Table (Initially Hidden) -->
-<div id="borrowed-table" style="display: none;">
-  <div class="table-responsive border rounded p-3">
-    <table class="table table-bordered align-middle text-center">
-      <thead class="table-light">
-        <tr>
-          <th>Borrower's NAME</th>
-          <th>Borrowed Item</th>
-          <th>Time Start</th>
-          <th>Time Returned</th>
-          <th>Date Start</th>
-          <th>Date Returned</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-        </tr>
-        <!-- Repeat <tr> as needed -->
-      </tbody>
-    </table>
-  </div>
-</div>
-
+        <div class="container-fluid">
+          <h4 class="text-center fw-bold bg-info text-white py-2">BORROWED</h4>
+          <div class="border rounded p-3 bg-white">
+            <table class="table table-bordered align-middle text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>Name</th>
+                  <th>Item</th>
+                  <th>Time Start</th>
+                  <th>Time Returned</th>
+                  <th>Date Start</th>
+                  <th>Date Returned</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php if (!empty($schedules)): 
+                  foreach ($schedules as $sched): ?>
+                  <tr>
+                    <td><?= htmlspecialchars($_SESSION['full_name'] ?? 'Homeowner') ?></td>
+                    <td><?= htmlspecialchars($sched['item_name']) ?></td>
+                    <td><?= htmlspecialchars($sched['time_start']) ?></td>
+                    <td><?= htmlspecialchars($sched['time_end']) ?></td>
+                    <td><?= htmlspecialchars($sched['request_date']) ?></td>
+                    <td><?= htmlspecialchars($sched['status'] === 'approved' ? $sched['request_date'] : '-') ?></td>
+                  </tr>
+                <?php endforeach; else: ?>
+                  <tr>
+                    <td colspan="6" class="text-muted">No scheduled items.</td>
+                  </tr>
+                <?php endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
     </main>
   </div>
@@ -1056,6 +1000,54 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+<!-- item section pagination -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const slides = document.querySelectorAll(".item-slide");
+    const dotsContainer = document.getElementById("itemPaginationDots");
+    const prevBtn = document.getElementById("prevItemBtn");
+    const nextBtn = document.getElementById("nextItemBtn");
+    let currentIndex = 0;
+
+    function renderDots() {
+  dotsContainer.innerHTML = '';
+  slides.forEach((_, i) => {
+    const dot = document.createElement('span');
+    dot.className = 'dot rounded-circle';
+    dot.style.width = '10px';
+    dot.style.height = '10px';
+    dot.style.display = 'inline-block';
+    dot.style.cursor = 'pointer';
+    dot.style.backgroundColor = i === currentIndex ? '#000' : '#ccc';
+    dot.addEventListener('click', () => {
+      currentIndex = i;
+      showSlide(currentIndex);
+    });
+    dotsContainer.appendChild(dot);
+  });
+}
+
+
+    function showSlide(index) {
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('d-none', i !== index);
+      });
+      renderDots();
+    }
+
+    prevBtn.addEventListener("click", function () {
+      currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+      showSlide(currentIndex);
+    });
+
+    nextBtn.addEventListener("click", function () {
+      currentIndex = (currentIndex + 1) % slides.length;
+      showSlide(currentIndex);
+    });
+
+    showSlide(currentIndex);
+  });
+</script>
 
 
 
