@@ -1,30 +1,41 @@
 <?php
 require 'db_connect.php';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_id'])) {
     $item_id = $_POST['item_id'];
-    $name = $_POST['name'];
-    $description = $_POST['description'];
-    $available = $_POST['available'];
-    $image = $_FILES['image']['name'];
+    $new_available = isset($_POST['available']) ? (int)$_POST['available'] : null;
 
-    // Handle image upload if provided
-    if ($image) {
-        $target_dir = "uploads/";
-        $target_file = $target_dir . basename($image);
-        move_uploaded_file($_FILES['image']['tmp_name'], $target_file);
-    }
+    // Fetch existing item data
+    $stmt = $conn->prepare("SELECT * FROM items WHERE id = ?");
+    $stmt->bind_param("i", $item_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $item = $result->fetch_assoc();
 
-    // Prepare SQL to update item
-    $sql = "UPDATE items SET name = ?, description = ?, available = ?, image = ? WHERE id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssisi", $name, $description, $available, $image, $item_id);
+    if ($item) {
+        // Keep existing values for name, image, and description
+        $name = $item['name'];
+        $description = $item['description'];
+        $image = $item['image'];
+        $borrowed = $item['borrowed'];
 
-    if ($stmt->execute()) {
-        header("Location: homepage.php");  // Redirect to homepage after updating
-        exit();
+        // Update available with new one
+        $stmt = $conn->prepare("UPDATE items SET name=?, description=?, image=?, available=?, borrowed=? WHERE id=?");
+        $stmt->bind_param("sssiii", $name, $description, $image, $new_available, $borrowed, $item_id);
+
+        if ($stmt->execute()) {
+            $_SESSION['update_success'] = "Item updated successfully!";
+        } else {
+            $_SESSION['update_error'] = "Failed to update item.";
+        }
     } else {
-        echo "Error: " . $stmt->error;
+        $_SESSION['update_error'] = "Item not found.";
     }
+} else {
+    $_SESSION['update_error'] = "Invalid request.";
 }
+
+header("Location: homepage.php#items-section");
+exit();
+
 ?>

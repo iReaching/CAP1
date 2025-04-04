@@ -44,15 +44,39 @@ $schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
 $sql = "SELECT * FROM items";
 $result = $conn->query($sql);
 
-// Fetch scheduled item requests with item name and homeowner info
+// Count borrowed per item
+$borrowed_counts = [];
+$borrowed_query = $conn->query("
+  SELECT item_id, COUNT(*) AS total_borrowed
+  FROM item_schedule
+  WHERE status = 'approved'
+  GROUP BY item_id
+");
+while ($row = $borrowed_query->fetch_assoc()) {
+  $borrowed_counts[$row['item_id']] = $row['total_borrowed'];
+}
+
+// Fetch item requests from database
 $item_requests_stmt = $conn->query("
-  SELECT i.*, u.user_id, u.role, itm.name AS item_name
+  SELECT i.id AS schedule_id, i.request_date, i.time_start, i.time_end, i.status, 
+         u.user_id, u.role, itm.name AS item_name
   FROM item_schedule i
   JOIN users u ON i.homeowner_id = u.user_id
   JOIN items itm ON i.item_id = itm.id
   ORDER BY i.request_date DESC
 ");
-$item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
+
+
+// Fetch report logs from database
+$entry_logs = [];
+$entry_log_result = $conn->query("SELECT * FROM entry_log ORDER BY timestamp DESC LIMIT 10");
+if ($entry_log_result) {
+    $entry_logs = $entry_log_result->fetch_all(MYSQLI_ASSOC);
+}
+
+$vehicle_query = $conn->query("SELECT * FROM vehicle_registrations");
+$vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
+
 
 ?>
 
@@ -211,7 +235,7 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
     <div class="row">
       
     <div class="col-md-6 text-center px-5">
-    <div class="border rounded p-3 bg-white shadow-sm">
+    <div class="border rounded p-3 shadow-sm" style="background-color: beige;">
       <!-- Toggle Buttons -->
       <div class="btn-group w-100 mb-4" role="group">
         <button class="btn btn-tab fw-bold active" id="tab-view">VIEW AMENITY</button>
@@ -231,7 +255,6 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
               </div>
             </div>
           <?php endforeach; ?>
-        </div>
           <div class="d-flex justify-content-center align-items-center dot-pagination mt-3">
             <button id="prevBtn" class="btn btn-outline-secondary btn-sm me-2">
               <i class="bi bi-chevron-left"></i>
@@ -249,6 +272,8 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
               <i class="bi bi-chevron-right"></i>
             </button>
           </div>
+        </div>
+          
 
 
 
@@ -317,7 +342,7 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
 
     <!-- Schedule Requests Overview -->
       <div class="col-md-6">
-        <div class="bg-light border p-4 rounded shadow-sm">
+        <div class="border p-4 rounded shadow-sm" style="background-color:beige;">
           <h3 class="text-center fw-bold mb-4">Amenity Requests</h3>
 
           <?php if (isset($_SESSION['message'])): ?>
@@ -448,8 +473,12 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
                             <h5 class="card-title"><?= htmlspecialchars($item['name']) ?></h5>
                             <img src="uploads/<?= htmlspecialchars($item['image']) ?>" class="img-fluid mb-3" alt="<?= htmlspecialchars($item['name']) ?>" />
                             <p class="card-text"><?= htmlspecialchars($item['description']) ?></p>
-                            <p>Available: <?= htmlspecialchars($item['available']) ?></p>
-                            <p>Borrowed: <?= htmlspecialchars($item['borrowed']) ?></p>
+                            <?php
+                              $borrowed = $borrowed_counts[$item['id']] ?? 0;
+                              $available = $item['available'] - $borrowed;
+                            ?>
+                            <p>Available: <?= $available ?></p>
+                            <p>Borrowed: <?= $borrowed ?></p>
                           </div>
                         </div>
                       </div>
@@ -545,25 +574,26 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
                 </tr>
               </thead>
               <tbody>
-                <?php foreach ($item_schedule_requests as $req): ?>
+                <?php foreach ($item_requests_stmt as $req): ?>
                   <?php if ($req['status'] === 'pending'): ?>
                     <tr>
                       <td><?= htmlspecialchars($req['user_id']) ?></td>
                       <td><?= htmlspecialchars($req['item_name']) ?></td>
-                      <td><?= htmlspecialchars($req['date_requested']) ?></td>
+                      <td><?= htmlspecialchars($req['request_date']) ?></td>
                       <td><?= htmlspecialchars($req['time_start']) ?></td>
                       <td><?= htmlspecialchars($req['time_end']) ?></td>
                       <td>
-                        <form action="update_item_status.php" method="POST" class="d-inline">
-                          <input type="hidden" name="id" value="<?= $req['id'] ?>">
-                          <input type="hidden" name="action" value="approve">
-                          <button type="submit" class="btn btn-success btn-sm mb-1">Approve</button>
-                        </form>
-                        <form action="update_item_status.php" method="POST" class="d-inline">
-                          <input type="hidden" name="id" value="<?= $req['id'] ?>">
-                          <input type="hidden" name="action" value="reject">
-                          <button type="submit" class="btn btn-danger btn-sm">Reject</button>
-                        </form>
+                      <form method="POST" action="update_item_status.php" class="d-inline">
+                        <input type="hidden" name="schedule_id" value="<?= $req['schedule_id'] ?>">
+                        <input type="hidden" name="status" value="approved">
+                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                      </form>
+
+                      <form method="POST" action="update_item_status.php" class="d-inline">
+                        <input type="hidden" name="schedule_id" value="<?= $req['schedule_id'] ?>">
+                        <input type="hidden" name="status" value="rejected">
+                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                      </form>
                       </td>
                     </tr>
                   <?php endif; ?>
@@ -588,12 +618,12 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
                 </tr>
               </thead>
               <tbody>
-                <?php foreach ($item_schedule_requests as $req): ?>
+                <?php foreach ($item_requests_stmt as $req): ?>
                   <?php if ($req['status'] !== 'pending'): ?>
                     <tr>
                       <td><?= htmlspecialchars($req['user_id']) ?></td>
                       <td><?= htmlspecialchars($req['item_name']) ?></td>
-                      <td><?= htmlspecialchars($req['date_requested']) ?></td>
+                      <td><?= htmlspecialchars($req['request_date']) ?></td>
                       <td><?= htmlspecialchars($req['time_start']) ?></td>
                       <td><?= htmlspecialchars($req['time_end']) ?></td>
                       <td>
@@ -616,6 +646,295 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
 
 
 
+<!-- REPORT SECTION -->
+<section id="report" class="py-4 bg-white">
+  
+  <div class="container">
+    <!-- Toggle Button (Right aligned) -->
+  <div class="d-flex justify-content-end mb-2 px-4">
+        <button id="btnReportLogs" class="btn btn-primary btn-sm">REPORT LOGS</button>
+        <button id="btnSubmitReport" class="btn btn-success btn-sm" style="display: none;">SUBMIT REPORT</button>
+      </div>
+    <h1 class="fw-bold mb-4">REPORT</h1>
+
+    <div id="submit-report-section" class="border rounded p-4 shadow-sm bg-beige" style="background-color: beige;">
+      <form action="submit_report.php" method="POST">
+        <div class="mb-3">
+          <textarea name="report_message" class="form-control" rows="24" placeholder="Enter your report..." required></textarea>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <select name="block" class="form-select" required>
+              <option value="">Select Block</option>
+              <option value="A">Block A</option>
+              <option value="B">Block B</option>
+              <option value="C">Block C</option>
+              <!-- Add more blocks as needed -->
+            </select>
+          </div>
+          <div class="col-md-6">
+            <select name="lot" class="form-select" required>
+              <option value="">Select Lot</option>
+              <option value="1">Lot 1</option>
+              <option value="2">Lot 2</option>
+              <option value="3">Lot 3</option>
+              <!-- Add more lots as needed -->
+            </select>
+          </div>
+        </div>
+        <div class="text-end">
+          <button type="submit" class="btn btn-danger fw-bold">SUBMIT REPORT</button>
+        </div>
+      </form>
+      </div>
+    
+
+
+  <!-- Report Logs Section (hidden by default) -->
+<div id="report-logs-section" style="display: none;">
+  <h4 class="fw-bold mb-3">Ongoing Reports</h4>
+  <div class="border rounded p-4 shadow-sm" style="background-color: beige;">
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle text-center">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>House ID</th>
+            <th>Block</th>
+            <th>Lot</th>
+            <th>Message</th>
+            <th>Date Submitted</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php if (empty($report_logs)): ?>
+          <tr><td colspan="7" class="text-muted">No ongoing reports.</td></tr>
+        <?php else: ?>
+          <?php foreach ($report_logs as $log): ?>
+            <tr>
+              <td><?= htmlspecialchars($log['full_name']) ?></td>
+              <td><?= htmlspecialchars($log['user_id']) ?></td>
+              <td><?= htmlspecialchars($log['block']) ?></td>
+              <td><?= htmlspecialchars($log['lot']) ?></td>
+              <td><?= htmlspecialchars($log['message']) ?></td>
+              <td><?= htmlspecialchars($log['date_submitted']) ?></td>
+              <td>
+                <form method="POST" action="resolve_report.php">
+                  <input type="hidden" name="report_id" value="<?= $log['id'] ?>">
+                  <button type="submit" class="btn btn-primary btn-sm">Resolve</button>
+                </form>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+        <?php endif; ?>
+
+          <!-- Repeat rows dynamically -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</section>
+
+
+
+<!-- ENTRY LOG SECTION -->
+<section id="entrylog" class="py-5" style="background-color: beige;">
+  <div class="container">
+    <h2 class="fw-bold mb-4">ENTRY LOG</h2>
+
+    <div class="border rounded p-4 shadow-sm bg-white">
+      <form action="log_entry_exit.php" method="POST" class="mb-4">
+        <div class="row g-3 mb-3">
+          <div class="col-md-4">
+            <label for="name" class="form-label">Name / Visitor</label>
+            <input type="text" class="form-control" name="name" required>
+          </div>
+          <div class="col-md-4">
+            <label for="entry_type" class="form-label">Type</label>
+            <select name="entry_type" class="form-select" required>
+              <option value="Entry">Entry</option>
+              <option value="Exit">Exit</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label for="vehicle_plate" class="form-label">Vehicle Plate (optional)</label>
+            <input type="text" class="form-control" name="vehicle_plate">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-10">
+            <label for="reason" class="form-label">Reason of Entry</label>
+            <input type="text" class="form-control" name="reason" required>
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Log</button>
+          </div>
+        </div>
+      </form>
+
+      <h5 class="fw-bold mb-3">Recent Logs</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Vehicle Plate</th>
+            <th>Reason</th>
+            <th>Timestamp</th>
+            <th></th>
+          </tr>
+        </thead>
+          <tbody>
+            <?php foreach ($entry_logs as $log): ?>
+              <tr>
+                <td><?= htmlspecialchars($log['name']) ?></td>
+                <td><?= htmlspecialchars($log['entry_type']) ?></td>
+                <td><?= htmlspecialchars($log['vehicle_plate']) ?></td>
+                <td><?= htmlspecialchars($log['reason']) ?></td>
+                <td><?= htmlspecialchars($log['timestamp']) ?></td>
+                <td>
+                  <form action="delete_entry_log.php" method="POST" onsubmit="return confirm('Delete this log?');">
+                    <input type="hidden" name="log_id" value="<?= $log['id'] ?>">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ACCOUNT DETAILS | VEHICLE REGISTRATION -->
+<section id="account" class="py-5 bg-light">
+  <div class="container">
+    <h2 class="fw-bold mb-4">ACCOUNT <small class="text-muted">| Vehicle Registration</small></h2>
+
+    <div class="border rounded p-4 shadow-sm" style="background-color: ;">
+      <h4 class="text-center fw-bold mb-4">Vehicle</h4>
+      <form action="submit_vehicle.php" method="POST" enctype="multipart/form-data">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Name <small class="text-muted">(on the registered vehicle)</small></label>
+            <input type="text" name="vehicle_owner" class="form-control" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Color</label>
+            <input type="text" name="color" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Type of Vehicle</label>
+            <select name="type" class="form-select" required>
+              <option value="">Select Type</option>
+              <option value="Car">Car</option>
+              <option value="Motorcycle">Motorcycle</option>
+              <option value="Bicycle">Bicycle</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Plate Number <small class="text-muted">(Optional)</small></label>
+            <input type="text" name="plate_number" class="form-control">
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Picture of the Vehicle</label>
+            <input type="file" name="vehicle_image" class="form-control">
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Block</label>
+            <select name="block" class="form-select" required>
+              <option value="">Select Block</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Lot</label>
+            <select name="lot" class="form-select" required>
+              <option value="">Select Lot</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="text-center">
+          <button type="submit" class="btn btn-primary px-5">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+
+<!-- Account Records Section -->
+<div class="container mt-5">
+  <h2 class="fw-bold mb-4">ACCOUNT RECORDS</h2>
+  <div class="table-responsive">
+    <table class="table table-bordered text-center align-middle shadow-sm">
+      <thead class="table-light">
+        <tr>
+          <th>User ID</th>
+          <th>Name of Vehicle</th>
+          <th>Type</th>
+          <th>Color</th>
+          <th>Plate</th>
+          <th>Block</th>
+          <th>Lot</th>
+          <th>Vehicle Image</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($vehicle_records as $record): ?>
+          <tr>
+            <td><?= htmlspecialchars($record['user_id']) ?></td>
+            <td><?= htmlspecialchars($record['name']) ?></td>
+            <td><?= htmlspecialchars($record['type_of_vehicle']) ?></td>
+            <td><?= htmlspecialchars($record['color']) ?></td>
+            <td><?= htmlspecialchars($record['plate_number'] ?: '—') ?></td>
+            <td><?= htmlspecialchars($record['block']) ?></td>
+            <td><?= htmlspecialchars($record['lot']) ?></td>
+            <td>
+              <?php if (!empty($record['vehicle_pic_path'])): ?>
+                <img src="<?= htmlspecialchars($record['vehicle_pic_path']) ?>"
+                    alt="Vehicle"
+                    class="img-thumbnail clickable-img"
+                    data-bs-toggle="modal"
+                    data-bs-target="#vehicleModal"
+                    data-img-src="<?= htmlspecialchars($record['vehicle_pic_path']) ?>"
+                    style="max-width: 80px; max-height: 80px; object-fit: cover; border-radius: 8px;">
+              <?php else: ?>
+                <span class="text-muted">No Image</span>
+              <?php endif; ?>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+</div>
 
 
 
@@ -627,11 +946,6 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
 
 
 
-
-
-
-
-
 <!-- MODALS SECTION -->
 <!-- MODALS SECTION -->
 <!-- MODALS SECTION -->
@@ -674,6 +988,16 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
 
 
 
+<!-- Vehicle Image Modal -->
+<div class="modal fade" id="vehicleModal" tabindex="-1" aria-labelledby="vehicleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-body text-center">
+        <img src="" id="modalImage" class="img-fluid rounded" alt="Vehicle Image">
+      </div>
+    </div>
+  </div>
+</div>
 
 
 
@@ -810,7 +1134,20 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
 
 
 
-
+<!-- bottom right toast popup after successfully logging in entry log section.-->
+<?php if (isset($_SESSION['entry_log_deleted'])): ?>
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+    <div class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <?= $_SESSION['entry_log_deleted']; ?>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+  <?php unset($_SESSION['entry_log_deleted']); ?>
+<?php endif; ?>
 
 
 
@@ -1046,7 +1383,7 @@ $item_schedule_requests = $item_requests_stmt->fetch_all(MYSQLI_ASSOC);
 
 
 
-<!-- script for paging in amenitiies -->
+<!-- script for paging in amenities -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const amenities = document.querySelectorAll("#viewAmenitiesSection .carousel-container");
@@ -1084,6 +1421,16 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+
+
+
+
+
+
+
+
+
+
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const btnView = document.getElementById("tab-view-items");
@@ -1115,8 +1462,43 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 </script>
 
+<!-- report section toggle button -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const btnReportLogs = document.getElementById("btnReportLogs");
+    const btnSubmitReport = document.getElementById("btnSubmitReport");
+    const reportForm = document.getElementById("submit-report-section");
+    const reportLogs = document.getElementById("report-logs-section");
+
+    btnReportLogs.addEventListener("click", function () {
+      reportForm.style.display = "none";
+      reportLogs.style.display = "block";
+      btnReportLogs.style.display = "none";
+      btnSubmitReport.style.display = "inline-block";
+    });
+
+    btnSubmitReport.addEventListener("click", function () {
+      reportLogs.style.display = "none";
+      reportForm.style.display = "block";
+      btnSubmitReport.style.display = "none";
+      btnReportLogs.style.display = "inline-block";
+    });
+  });
+</script>
 
 
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const modalImage = document.getElementById('modalImage');
+    const vehicleModal = document.getElementById('vehicleModal');
+    document.querySelectorAll('.clickable-img').forEach(img => {
+      img.addEventListener('click', function () {
+        const src = img.getAttribute('data-img-src');
+        modalImage.setAttribute('src', src);
+      });
+    });
+  });
+</script>
 
 
 

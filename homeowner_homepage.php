@@ -30,6 +30,17 @@ $stmt = $conn->query("SELECT * FROM amenities");
 if ($stmt && $stmt->num_rows > 0) {
     $amenities = $stmt->fetch_all(MYSQLI_ASSOC);
 }
+
+$sched_query = $conn->prepare("
+  SELECT i.request_date, i.time_start, i.time_end, i.status, items.name AS item_name
+  FROM item_schedule i
+  JOIN items ON i.item_id = items.id
+  WHERE i.homeowner_id = ?
+  ORDER BY i.request_date DESC
+");
+$sched_query->bind_param("s", $_SESSION['user_id']);
+$sched_query->execute();
+$schedules = $sched_query->get_result();
 ?>
 
 
@@ -426,19 +437,31 @@ if ($stmt && $stmt->num_rows > 0) {
                 </tr>
               </thead>
               <tbody>
-                <?php if (!empty($schedules)): 
-                  foreach ($schedules as $sched): ?>
+                <?php if (!empty($schedules)): ?>
+                  <?php foreach ($schedules as $sched): ?>
+                    <tr>
+                      <td><?= htmlspecialchars($_SESSION['user_id']) ?></td>
+                      <td><?= htmlspecialchars($sched['item_name']) ?></td>
+                      <td><?= htmlspecialchars($sched['request_date']) ?></td>
+                      <td><?= htmlspecialchars($sched['time_start']) ?></td>
+                      <td><?= htmlspecialchars($sched['time_end']) ?></td>
+                      <td>
+                        <?php
+                          $status = $sched['status'];
+                          $badgeClass = match ($status) {
+                            'pending' => 'badge bg-warning text-dark',
+                            'approved' => 'badge bg-success',
+                            'rejected' => 'badge bg-danger',
+                            default => 'badge bg-secondary'
+                          };
+                        ?>
+                        <span class="<?= $badgeClass ?>"><?= ucfirst($status) ?></span>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                <?php else: ?>
                   <tr>
-                    <td><?= htmlspecialchars($_SESSION['full_name'] ?? 'Homeowner') ?></td>
-                    <td><?= htmlspecialchars($sched['item_name']) ?></td>
-                    <td><?= htmlspecialchars($sched['time_start']) ?></td>
-                    <td><?= htmlspecialchars($sched['time_end']) ?></td>
-                    <td><?= htmlspecialchars($sched['request_date']) ?></td>
-                    <td><?= htmlspecialchars($sched['status'] === 'approved' ? $sched['request_date'] : '-') ?></td>
-                  </tr>
-                <?php endforeach; else: ?>
-                  <tr>
-                    <td colspan="6" class="text-muted">No scheduled items.</td>
+                    <td colspan="6" class="text-muted text-center">No scheduled items.</td>
                   </tr>
                 <?php endif; ?>
               </tbody>
