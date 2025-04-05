@@ -66,8 +66,23 @@ $item_requests_stmt = $conn->query("
   ORDER BY i.request_date DESC
 ");
 
+// Fetch report logs
+$report_logs = [];
+$report_stmt = $conn->query("
+  SELECT r.*, u.full_name 
+  FROM maintenance_reports r
+  LEFT JOIN user_profiles u ON r.user_id = u.user_id
+  WHERE r.status = 'ongoing'
+  ORDER BY r.date_submitted DESC
+");
 
-// Fetch report logs from database
+if ($report_stmt && $report_stmt->num_rows > 0) {
+    $report_logs = $report_stmt->fetch_all(MYSQLI_ASSOC);
+}
+
+
+
+// Fetch entry logs from database
 $entry_logs = [];
 $entry_log_result = $conn->query("SELECT * FROM entry_log ORDER BY timestamp DESC LIMIT 10");
 if ($entry_log_result) {
