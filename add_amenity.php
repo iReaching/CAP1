@@ -2,6 +2,11 @@
 session_start();
 require 'db_connect.php';
 
+$role = $_SESSION['role'] ?? 'admin';
+$redirectHome = ($role === 'homeowner') ? 'homeowner_homepage.php#amenities' : (($role === 'staff') ? 'staff_homepage.php#amenities' : 'homepage.php#amenities');
+
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name']);
     $description = trim($_POST['description']);
@@ -10,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate input
     if (empty($name) || empty($description) || $image['error'] !== 0) {
         $_SESSION['update_error'] = "Please fill out all fields and upload a valid image.";
-        header("Location: homepage.php#amenities");
+        header("Location: $redirectHome");
         exit();
     }
 
@@ -20,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!in_array($ext, $allowed_extensions)) {
         $_SESSION['update_error'] = "Invalid image format. Please upload JPG, PNG, or GIF.";
-        header("Location: homepage.php#amenities");
+        header("Location: $redirectHome");
         exit();
     }
 
@@ -30,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!move_uploaded_file($image['tmp_name'], $destination)) {
         $_SESSION['update_error'] = "Failed to upload image.";
-        header("Location: homepage.php#amenities");
+        header("Location: $redirectHome");
         exit();
     }
 
@@ -44,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['update_error'] = "Something went wrong while adding the amenity.";
     }
 
-    header("Location: homepage.php#amenities");
+    header("Location: $redirectHome");
     exit();
 }
 ?>

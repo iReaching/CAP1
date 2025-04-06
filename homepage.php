@@ -707,6 +707,13 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
 
   <!-- Report Logs Section (hidden by default) -->
 <div id="report-logs-section" style="display: none;">
+<?php if (isset($_SESSION['report_message'])): ?>
+  <div class="alert alert-info">
+    <?= htmlspecialchars($_SESSION['report_message']); ?>
+  </div>
+  <?php unset($_SESSION['report_message']); ?>
+<?php endif; ?>
+
   <h4 class="fw-bold mb-3">Ongoing Reports</h4>
   <div class="border rounded p-4 shadow-sm" style="background-color: beige;">
     <div class="table-responsive">

@@ -1,6 +1,10 @@
 <?php
 require 'db_connect.php';  // Include your database connection
 
+$role = $_SESSION['role'] ?? 'admin';
+$redirectHome = ($role === 'homeowner') ? 'homeowner_homepage.php#items-section' : (($role === 'staff') ? 'staff_homepage.php#items-section' : 'homepage.php#items-section');
+
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Get form data
     $name = $_POST['name'];
@@ -20,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("ssis", $name, $description, $available, $image);
 
         if ($stmt->execute()) {
-            header("Location: homepage.php");  // Redirect back to homepage after success
+            header("Location: $redirectHome");  // Redirect back to homepage after success
             exit();
         } else {
             echo "Error: " . $stmt->error;

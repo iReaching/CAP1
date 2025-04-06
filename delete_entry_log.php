@@ -2,6 +2,10 @@
 session_start();
 require 'db_connect.php';
 
+$role = $_SESSION['role'] ?? 'admin';
+$redirectHome = ($role === 'guard') ? 'guard_homepage.php' : (($role === 'staff') ? 'staff_homepage.php' : 'homepage.php#entrylog');
+
+
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['log_id'])) {
     $log_id = $_POST['log_id'];
 
@@ -15,6 +19,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['log_id'])) {
     }
 }
 
-header("Location: homepage.php#entrylog");
+header("Location: $redirectHome");
 exit();
 ?>

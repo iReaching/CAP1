@@ -2,6 +2,10 @@
 session_start();
 require 'db_connect.php';
 
+$role = $_SESSION['role'] ?? 'admin';
+$redirectHome = ($role === 'homeowner') ? 'homeowner_homepage.php' : (($role === 'staff') ? 'staff_homepage.php' : 'homepage.php');
+
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $schedule_id = $_POST['schedule_id'] ?? null;
     $new_status = $_POST['status'] ?? null;
@@ -22,5 +26,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $_SESSION['update_error'] = "Invalid request method.";
 }
 
-header("Location: homepage.php#schedule-section");
+header("Location: $redirectHome");
+
 exit();

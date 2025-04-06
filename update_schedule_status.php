@@ -2,6 +2,10 @@
 session_start();
 require 'db_connect.php';
 
+$role = $_SESSION['role'] ?? 'admin';
+$redirectHome = ($role === 'homeowner') ? 'homeowner_homepage.php' : (($role === 'staff') ? 'staff_homepage.php' : 'homepage.php');
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['id']) && isset($_POST['action'])) {
         $id = $_POST['id'];
@@ -29,6 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-header("Location: homepage.php");
+header("Location: $redirectReport");
+
 exit();
 ?>

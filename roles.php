@@ -46,6 +46,13 @@
                     <a href="login_staff.php" class="btn btn-custom">CLICK HERE</a>
                 </div>
             </div>
+            <div class="col-md-4 my-4 mx-1">
+              <div class="role-card">
+                <img src="./images/guard.png" class="profile-icon" alt="Guard">
+                <p class="account-text">GUARD</p>
+                <a href="login_guard.php" class="btn btn-custom">CLICK HERE</a>
+              </div>
+            </div>
         </div>
     </div>
 

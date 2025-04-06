@@ -2,6 +2,9 @@
 session_start();
 require 'db_connect.php';
 
+$role = $_SESSION['role'] ?? 'admin';
+$redirectHome = ($role === 'homeowner') ? 'homeowner_homepage.php#amenities' : (($role === 'staff') ? 'staff_homepage.php#amenities' : 'homepage.php');
+
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["new_image"])) {
     $amenity_id = $_POST["amenity_id"];
     $image = $_FILES["new_image"];
@@ -23,7 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["new_image"])) {
         $_SESSION["update_error"] = "Invalid image or file too large.";
     }
 
-    header("Location: homepage.php#amenities");
+    header("Location: $redirectHome");
     exit();
 }
 ?>

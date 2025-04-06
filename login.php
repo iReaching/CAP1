@@ -21,11 +21,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
 
-        if (password_verify($password, $user["password"])) {
-            $_SESSION["user_id"] = $user["user_id"];
-            $_SESSION["role"] = $role;
-            $_SESSION["login_success"] = "Welcome back, $userID!";
-
             if (password_verify($password, $user["password"])) {
                 $_SESSION["user_id"] = $user["user_id"];
                 $_SESSION["role"] = $role;
@@ -42,11 +37,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     case "homeowner":
                         header("Location: homeowner_homepage.php");
                         break;
+                    case "guard":
+                        header("Location: guard_homepage.php");
+                        break;
                     default:
                         $_SESSION["login_error"] = "Unknown role!";
                         header("Location: login_{$role}.php");
                         break;
-                }
+                }                
                 exit();
             }
             
@@ -59,5 +57,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     header("Location: login_{$role}.php");
     exit();
-}
 ?>

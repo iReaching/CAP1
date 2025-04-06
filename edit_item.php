@@ -1,6 +1,10 @@
 <?php
 require 'db_connect.php';
 
+$role = $_SESSION['role'] ?? 'admin';
+$redirectHome = ($role === 'homeowner') ? 'homeowner_homepage.php#items-section' : (($role === 'staff') ? 'staff_homepage.php#items-section' : 'homepage.php#items-section');
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_id'])) {
     $item_id = $_POST['item_id'];
     $new_available = isset($_POST['available']) ? (int)$_POST['available'] : null;
@@ -35,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['item_id'])) {
     $_SESSION['update_error'] = "Invalid request.";
 }
 
-header("Location: homepage.php#items-section");
+header("Location: $redirectHome");
 exit();
 
 ?>

@@ -2,6 +2,10 @@
 session_start();
 require 'db_connect.php';
 
+$role = $_SESSION['role'] ?? 'admin';
+$redirectHome = ($role === 'homeowner') ? 'homeowner_homepage.php#amenities' : (($role === 'staff') ? 'staff_homepage.php#amenities' : 'homepage.php#amenities');
+
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $amenity_id = $_POST["amenity_id"] ?? '';
     $new_name = trim($_POST["new_name"] ?? '');
@@ -59,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $_SESSION['update_error'] = "Failed to update amenity.";
     }
 
-    header("Location: homepage.php#amenities");
+    header("Location: $redirectHome");
     exit();
 }
 ?>

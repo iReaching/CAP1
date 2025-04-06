@@ -2,6 +2,10 @@
 session_start();
 require 'db_connect.php';
 
+$role = $_SESSION['role'] ?? 'admin';
+$redirectHome = ($role === 'homeowner') ? 'homeowner_homepage.php#account' : (($role === 'staff') ? 'staff_homepage.php#account' : 'homepage.php#account');
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_SESSION['user_id'])) {
   $user_id = $_SESSION['user_id'];
   $name = $_POST['name'];
@@ -40,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_SESSION['user_id'])) {
     $_SESSION['toast_error'] = "Something went wrong. Try again.";
   }
 
-  header("Location: homepage.php#account");
+  header("Location: $redirectHome");
   exit();
 }
 ?>

@@ -1,5 +1,10 @@
 <?php
+session_start();
 require 'db_connect.php';
+
+$role = $_SESSION['role'] ?? 'admin';
+$redirectHome = ($role === 'guard') ? 'guard_homepage.php' : (($role === 'staff') ? 'staff_homepage.php' : 'homepage.php#entrylog');
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'];
@@ -11,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bind_param("ssss", $name, $entry_type, $vehicle_plate, $reason);
     
     if ($stmt->execute()) {
-        header("Location: homepage.php#entrylog");
+        header("Location: $redirectHome");
         exit();
     } else {
         echo "Error logging entry.";

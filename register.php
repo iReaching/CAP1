@@ -6,7 +6,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $user_id = trim($_POST["user_id"]);
     $email = trim($_POST["email"]);
     $password = trim($_POST["password"]);
-    $role = trim($_POST["role"]);  // Passed from the form: 'homeowner' or 'staff'
+    $role = trim($_POST["role"]); 
 
     $redirectPage = "register_{$role}.php"; // Dynamic redirect target
 

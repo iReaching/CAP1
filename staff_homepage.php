@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login_staff.php");
+    header("Location: l_admin.php");
     exit();
 }
 require 'db_connect.php';
@@ -23,6 +23,68 @@ if (isset($_SESSION['user_id'])) {
         $profile['profile_pic'] = $row['profile_pic'] ?: './images/profile.png';
     }
 }
+
+$stmt = $conn->query("SELECT * FROM amenities");
+$amenities = $stmt->fetch_all(MYSQLI_ASSOC);
+// Fetch all amenity requests to show in the admin SCHEDULE section
+$schedule_stmt = $conn->query("SELECT * FROM amenity_schedule ORDER BY created_at DESC");
+$schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
+
+
+// Fetch amenity schedule requests with amenity name
+$schedule_stmt = $conn->query("
+  SELECT s.*, a.name AS amenity_name
+  FROM amenity_schedule s
+  JOIN amenities a ON s.amenity_id = a.id
+  ORDER BY s.request_date DESC
+");
+$schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
+
+// Fetch items from database
+$sql = "SELECT * FROM items";
+$result = $conn->query($sql);
+
+// Count borrowed per item
+$borrowed_counts = [];
+$borrowed_query = $conn->query("
+  SELECT item_id, COUNT(*) AS total_borrowed
+  FROM item_schedule
+  WHERE status = 'approved'
+  GROUP BY item_id
+");
+while ($row = $borrowed_query->fetch_assoc()) {
+  $borrowed_counts[$row['item_id']] = $row['total_borrowed'];
+}
+
+// Fetch item requests from database
+$item_requests_stmt = $conn->query("
+  SELECT i.id AS schedule_id, i.request_date, i.time_start, i.time_end, i.status, 
+         u.user_id, u.role, itm.name AS item_name
+  FROM item_schedule i
+  JOIN users u ON i.homeowner_id = u.user_id
+  JOIN items itm ON i.item_id = itm.id
+  ORDER BY i.request_date DESC
+");
+
+// Fetch report logs
+$report_logs = [];
+$report_stmt = $conn->query("
+  SELECT r.*, u.full_name 
+  FROM maintenance_reports r
+  LEFT JOIN user_profiles u ON r.user_id = u.user_id
+  WHERE r.status = 'ongoing'
+  ORDER BY r.date_submitted DESC
+");
+
+if ($report_stmt && $report_stmt->num_rows > 0) {
+    $report_logs = $report_stmt->fetch_all(MYSQLI_ASSOC);
+}
+
+
+$vehicle_query = $conn->query("SELECT * FROM vehicle_registrations");
+$vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
+
+
 
 ?>
 
@@ -121,7 +183,6 @@ if (isset($_SESSION['user_id'])) {
         <li class="nav-item"><a class="nav-link" href="#amenities">AMENITIES</a></li>
         <li class="nav-item"><a class="nav-link" href="#items-section">ITEM</a></li>
         <li class="nav-item"><a class="nav-link" href="#report">REPORT</a></li>
-        <li class="nav-item"><a class="nav-link" href="#entrylog">ENTRY LOG</a></li>
         <li class="nav-item"><a class="nav-link" href="#account">ACCOUNT</a></li>
       </ul>
     </div>
@@ -180,92 +241,177 @@ if (isset($_SESSION['user_id'])) {
     <h2 class="text-center fw-bold mb-5">AMENITIES</h2>
     <div class="row">
       
-      <!-- Facilities Carousel -->
-      <div class="col-md-6 text-center px-5">
-        <div class="carousel-container border rounded p-3">
-          <img src="./images/facility1.jpg" class="img-fluid border rounded mb-3" alt="Facility" style="max-height: 300px; object-fit: cover;">
-          
-          <!-- Facility Controls -->
-          <div class="input-group mb-3">
-          <input type="text" class="form-control w-50 text-center" placeholder="Enter Amenity Name (e.g. Clubhouse)" />
-            <button class="btn btn-success ms-2">Change Images</button>
-          </div>
-          
-          <div class="form-floating mb-3">
-            <textarea class="form-control" id="facilityDesc" style="height: 250px;">A building or area used for social or recreational activities, serving as a central gathering place for residents</textarea>
-            <label for="facilityDesc">Description</label>
-          </div>
+    <div class="col-md-6 text-center px-5">
+    <div class="border rounded p-3 shadow-sm" style="background-color: beige;">
+      <!-- Toggle Buttons -->
+      <div class="btn-group w-100 mb-4" role="group">
+        <button class="btn btn-tab fw-bold active" id="tab-view">VIEW AMENITY</button>
+        <button class="btn btn-tab fw-bold" id="tab-add">ADD AMENITY</button>
+        <button class="btn btn-tab fw-bold" id="tab-edit">EDIT AMENITY</button>
+      </div>
+      <!-- View Amenities Section -->
+        <div id="viewAmenitiesSection">
+          <?php foreach ($amenities as $amenity): ?>
+            <div class="carousel-container border rounded p-3 mb-4 amenity-item">
+              <img src="<?php echo $amenity['image']; ?>" class="img-fluid border rounded mb-3" alt="Facility" style="max-height: 300px; object-fit: cover;">
+              <div class="form-control text-center fw-semibold mb-3">
+                <?php echo htmlspecialchars($amenity['name']); ?>
+              </div>
+              <div class="form-control text-start mb-3" style="height: 150px; overflow-y: auto;">
+                <?php echo nl2br(htmlspecialchars($amenity['description'])); ?>
+              </div>
+            </div>
+          <?php endforeach; ?>
+          <div class="d-flex justify-content-center align-items-center dot-pagination mt-3">
+            <button id="prevBtn" class="btn btn-outline-secondary btn-sm me-2">
+              <i class="bi bi-chevron-left"></i>
+            </button>
 
-          <div class="d-flex justify-content-center gap-3">
-            <button class="btn btn-success px-4">ADD</button>
-            <button class="btn btn-danger px-4">REMOVE</button>
-          </div>
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
+            <span class="dot mx-1"></span>
 
-          <!-- Dot indicators -->
-          <div class="mt-3">
-            <span class="dot mx-1"></span>
-            <span class="dot mx-1"></span>
-            <span class="dot mx-1"></span>
-            <span class="dot mx-1 active-dot"></span>
-            <span class="dot mx-1"></span>
-            <span class="dot mx-1"></span>
-            <span class="dot mx-1"></span>
+            <button id="nextBtn" class="btn btn-outline-secondary btn-sm ms-2">
+              <i class="bi bi-chevron-right"></i>
+            </button>
           </div>
+        </div>
+          
+
+
+
+      <!-- Add Amenity Section (hidden by default) -->
+      <div id="addAmenitySection" style="display: none;">
+        <div class="border rounded p-3 mb-4 bg-white shadow-sm">
+          <h4 class="text-center fw-bold mb-3">Add New Amenity</h4>
+          <form action="add_amenity.php" method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+              <input type="text" name="name" class="form-control" placeholder="Amenity Name" required>
+            </div>
+            <div class="mb-3">
+              <textarea name="description" class="form-control" placeholder="Amenity Description" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+              <input type="file" name="image" accept="image/*" class="form-control" required>
+            </div>
+            <div class="d-grid">
+              <button type="submit" class="btn btn-success">Add Amenity</button>
+            </div>
+          </form>
         </div>
       </div>
 
-      <!-- Schedule Table -->
+      <div id="editAmenitySection" style="display: none;">
+        <div class="border rounded p-3 mb-4 bg-white shadow-sm">
+          <h4 class="text-center fw-bold mb-3">Edit Existing Amenity</h4>
+          <form action="edit_amenity.php" method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Select Amenity</label>
+              <select name="amenity_id" class="form-select" required>
+                <option value="" disabled selected>Select an amenity</option>
+                <?php foreach ($amenities as $amenity): ?>
+                  <option value="<?php echo $amenity['id']; ?>">
+                    <?php echo htmlspecialchars($amenity['name']); ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">New Name</label>
+              <input type="text" name="new_name" class="form-control" placeholder="Leave blank to keep current name">
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">New Description</label>
+              <textarea name="new_description" class="form-control" placeholder="Leave blank to keep current description" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">New Image</label>
+              <input type="file" name="new_image" accept="image/*" class="form-control">
+              <small class="text-muted">Optional — only choose a file if you want to replace the current image.</small>
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-warning">Update Amenity</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div> <!-- End of Left Column -->
+
+
+
+    
+
+    <!-- Schedule Requests Overview -->
       <div class="col-md-6">
-        <div class="bg-light border p-3 rounded shadow-sm">
-          <h3 class="text-center fw-bold mb-4">SCHEDULE</h3>
-          <table class="table table-bordered text-center align-middle">
-            <thead class="table-light">
-              <tr>
-                <th>Name</th>
-                <th>House ID</th>
-                <th>Date</th>
-                <th>Message</th>
-                <th>Type</th>
-                <th>Time Interval</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php for ($i = 0; $i < 5; $i++): ?>
-              <tr>
-                <td>John Doe</td>
-                <td>123</td>
-                <td>2025-03-20</td>
-                <td>Event</td>
-                <td>Clubhouse</td>
-                <td>10:00 - 12:00</td>
-                <td>
-                  <button class="btn btn-success btn-sm">Approve</button>
-                  <button class="btn btn-danger btn-sm">Reject</button>
-                </td>
-              </tr>
-              <?php endfor; ?>
-            </tbody>
-          </table>
+        <div class="border p-4 rounded shadow-sm" style="background-color:beige;">
+          <h3 class="text-center fw-bold mb-4">Amenity Requests</h3>
 
-          <!-- Pagination -->
-          <div class="d-flex justify-content-center mt-3">
-            <nav>
-              <ul class="pagination mb-0">
-                <li class="page-item"><a class="page-link" href="#"><i class="bi bi-chevron-double-left"></i></a></li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item"><a class="page-link" href="#">4</a></li>
-                <li class="page-item"><a class="page-link" href="#">5</a></li>
-                <li class="page-item"><a class="page-link" href="#">...</a></li>
-                <li class="page-item"><a class="page-link" href="#">29</a></li>
-                <li class="page-item"><a class="page-link" href="#"><i class="bi bi-chevron-double-right"></i></a></li>
-              </ul>
-            </nav>
-          </div>
+          <?php if (isset($_SESSION['message'])): ?>
+            <div class="alert alert-info">
+              <?= htmlspecialchars($_SESSION['message']); ?>
+            </div>
+            <?php unset($_SESSION['message']); ?>
+          <?php endif; ?>
+
+          <?php if (empty($schedule_requests)): ?>
+            <p class="text-center text-muted">No amenity requests found.</p>
+          <?php else: ?>
+            <div class="table-responsive">
+              <table class="table table-bordered text-center align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>User ID</th>
+                    <th>House ID</th>
+                    <th>Date</th>
+                    <th>Amenity</th>
+                    <th>Message</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($schedule_requests as $req): ?>
+                    <tr>
+                      <td><?= htmlspecialchars($req['homeowner_id']) ?></td>
+                      <td><?= htmlspecialchars($req['house_id']) ?></td>
+                      <td><?= htmlspecialchars($req['request_date']) ?></td>
+                      <td><?= htmlspecialchars($req['amenity_name']) ?></td>
+                      <td><?= htmlspecialchars($req['message']) ?></td>
+                      <td><?= htmlspecialchars($req['time_start']) ?> - <?= htmlspecialchars($req['time_end']) ?></td>
+                      <td>
+                        <?php if ($req['status'] === 'pending'): ?>
+                          <form action="update_schedule_status.php" method="POST" class="d-inline">
+                            <input type="hidden" name="id" value="<?= $req['id'] ?>">
+                            <input type="hidden" name="action" value="approve">
+                            <button type="submit" class="btn btn-success btn-sm mb-1">Approve</button>
+                          </form>
+                          <form action="update_schedule_status.php" method="POST" class="d-inline">
+                            <input type="hidden" name="id" value="<?= $req['id'] ?>">
+                            <input type="hidden" name="action" value="reject">
+                            <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                          </form>
+                        <?php else: ?>
+                          <span class="badge bg-<?= $req['status'] === 'approved' ? 'success' : 'danger' ?>">
+                            <?= ucfirst($req['status']) ?>
+                          </span>
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
+          <?php endif; ?>
         </div>
       </div>
+
+    </div> <!-- end of row -->
 
     </div>
   </div>
@@ -293,188 +439,212 @@ if (isset($_SESSION['user_id'])) {
 
 
 
- <!-- items section -->
+<!-- items section -->
 <div class="container-fluid">
   <div class="row">
-    
     <!-- Sidebar -->
     <nav class="col-md-2 bg-light vh-100 d-flex flex-column align-items-start py-4 px-3 border-end">
-    <div id="highlightBar" class="position-absolute start-0 top-0 bg-primary" style="width: 4px; height: 42px; transition: top 0.3s ease;"></div>
-
       <a href="#items-section" class="btn w-100 text-start mb-2 fw-bold active" id="tab-item">ITEM</a>
       <a href="#schedule-section" class="btn w-100 text-start mb-2 fw-bold" id="tab-schedule">SCHEDULE</a>
     </nav>
+
     <!-- Content Area -->
     <main class="col-md-10 py-4 px-5">
-  <section class="mt-5" id="items-section">
-  <div class="container-fluid">
-  <div class="row">
-  
-  <!-- Single Item Card Start -->
-  <div class="card mb-3 shadow-sm">
-    <div class="card-body">
-      <div class="row g-3 align-items-center">
-        <!-- Item Name -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Name</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="Lawn Mower" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-pencil-square"></i>
-            </span>
-          </div>
+      <section id="items-section">
+        <div class="container-fluid">
+          <!-- Item Tabs for View, Add, Edit -->
+            <div class="col-md-12 mb-3">
+              <div class="mb-4 border rounded overflow-hidden">
+                <div class="d-flex">
+                  <!-- Button for View Items -->
+                  <button id="tab-view-items" class="w-100 btn border-0 fw-bold py-3 bg-info text-white">VIEW ITEMS</button>
+                  <!-- Button for Add Item -->
+                  <button id="tab-add-item" class="w-100 btn border-0 fw-bold py-3 bg-white text-dark">ADD ITEM</button>
+                  <!-- Button for Edit Item -->
+                  <button id="tab-edit-item" class="w-100 btn border-0 fw-bold py-3 bg-white text-dark">EDIT ITEM</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Item Content Sections -->
+            <div class="col-md-12">
+              <!-- View Items Section -->
+              <div id="view-items-section">
+                <h4 class="text-center mb-4">View Items</h4>
+                <?php if ($result->num_rows > 0): ?>
+                  <div class="row">
+                    <?php while ($item = $result->fetch_assoc()): ?>
+                      <div class="col-md-4 mb-4">
+                        <div class="card shadow-sm h-100">
+                          <div class="card-body">
+                            <h5 class="card-title"><?= htmlspecialchars($item['name']) ?></h5>
+                            <img src="uploads/<?= htmlspecialchars($item['image']) ?>" class="img-fluid mb-3" alt="<?= htmlspecialchars($item['name']) ?>" />
+                            <p class="card-text"><?= htmlspecialchars($item['description']) ?></p>
+                            <?php
+                              $borrowed = $borrowed_counts[$item['id']] ?? 0;
+                              $available = $item['available'] - $borrowed;
+                            ?>
+                            <p>Available: <?= $available ?></p>
+                            <p>Borrowed: <?= $borrowed ?></p>
+                          </div>
+                        </div>
+                      </div>
+                    <?php endwhile; ?>
+                  </div>
+                <?php else: ?>
+                  <p>No items found.</p>
+                <?php endif; ?>
+              </div>
+
+              <!-- Add Item Section -->
+              <div id="add-item-section" style="display: none;">
+                <h4 class="text-center mb-4">Add New Item</h4>
+                <form action="add_item.php" method="POST" enctype="multipart/form-data">
+                  <div class="mb-3">
+                    <label for="item-name" class="form-label">Item Name</label>
+                    <input type="text" class="form-control" id="item-name" name="name" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="item-description" class="form-label">Item Description</label>
+                    <textarea class="form-control" id="item-description" name="description" rows="3" required></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label for="item-available" class="form-label">Available Item</label>
+                    <input type="number" class="form-control" id="item-available" name="available" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="item-image" class="form-label">Item Image</label>
+                    <input type="file" class="form-control" id="item-image" name="image" required>
+                  </div>
+                  <button type="submit" class="btn btn-success">Add Item</button>
+                </form>
+              </div>
+
+              <!-- Edit Item Section -->
+              <div id="edit-item-section" style="display: none;">
+                <h4 class="text-center mb-4">Edit Existing Item</h4>
+                <form action="edit_item.php" method="POST" enctype="multipart/form-data">
+                  <div class="mb-3">
+                    <label for="edit-item-select" class="form-label">Select Item</label>
+                    <select name="item_id" class="form-select" id="edit-item-select" required>
+                      <option value="" disabled selected>Select an item</option>
+                      <?php foreach ($result as $item): ?>
+                        <option value="<?php echo $item['id']; ?>"><?php echo htmlspecialchars($item['name']); ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="edit-item-name" class="form-label">New Name</label>
+                    <input type="text" name="name" class="form-control" id="edit-item-name" placeholder="Leave blank to keep current name">
+                  </div>
+                  <div class="mb-3">
+                    <label for="edit-item-description" class="form-label">New Description</label>
+                    <textarea name="description" class="form-control" id="edit-item-description" placeholder="Leave blank to keep current description" rows="3"></textarea>
+                  </div>
+                  <div class="mb-3">
+                    <label for="edit-item-available" class="form-label">New Available Item</label>
+                    <input type="number" name="available" class="form-control" id="edit-item-available" placeholder="Leave blank to keep current quantity">
+                  </div>
+                  <div class="mb-3">
+                    <label for="edit-item-image" class="form-label">New Image</label>
+                    <input type="file" name="image" class="form-control" id="edit-item-image">
+                  </div>
+                  <button type="submit" class="btn btn-warning">Update Item</button>
+                </form>
+              </div>
+            </div>
+
         </div>
+      </section>
 
-        <!-- Image Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Image</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="lawnmower.jpg" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-eye me-2"></i>
-              <i class="bi bi-pencil-square"></i>
-            </span>
-          </div>
-        </div>
-
-        <!-- Quantity Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Item on-hand / Available / Borrowed</label>
-          <div class="d-flex gap-2">
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
- 
-
-  <div class="card mb-3 shadow-sm">
-    <div class="card-body">
-      <div class="row g-3 align-items-center">
-        <!-- Item Name -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Name</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="Lawn Mower" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-pencil-square"></i>
-            </span>
-          </div>
-        </div>
-
-        <!-- Image Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Image</label>
-          <div class="input-group">
-            <input type="text" class="form-control" value="lawnmower.jpg" readonly>
-            <span class="input-group-text bg-light">
-              <i class="bi bi-eye me-2"></i>
-              <i class="bi bi-pencil-square"></i>
-            </span>
-          </div>
-        </div>
-
-        <!-- Quantity Info -->
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Item on-hand / Available / Borrowed</label>
-          <div class="d-flex gap-2">
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-            <input type="text" class="form-control" placeholder="0" readonly>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- Single Item Card End -->
-
-  <!-- Repeat the card above for more items... -->
-
-  <!-- Pagination -->
-  <nav aria-label="Items pagination">
-    <ul class="pagination justify-content-center">
-      <li class="page-item disabled"><a class="page-link">«</a></li>
-      <li class="page-item active"><a class="page-link">1</a></li>
-      <li class="page-item"><a class="page-link">2</a></li>
-      <li class="page-item"><a class="page-link">3</a></li>
-      <li class="page-item disabled"><a class="page-link">...</a></li>
-      <li class="page-item"><a class="page-link">15</a></li>
-      <li class="page-item"><a class="page-link">»</a></li>
-    </ul>
-  </nav>
-</section>
-
-      <!-- SCHEDULE SECTION (hidden by default) -->
+      <!-- SCHEDULE SECTION (admin view of scheduled items) -->
       <section id="schedule-section" style="display: none;">
-        <!-- Schedule Tabs -->
-<div class="mb-4 border rounded overflow-hidden">
-  <div class="d-flex">
-    <button id="tab-ongoing" class="w-50 btn border-0 fw-bold py-3 bg-info text-white">ONGOING</button>
-    <button id="tab-borrowed" class="w-50 btn border-0 fw-bold py-3 bg-white text-dark">BORROWED</button>
-  </div>
-</div>
+        <div class="mb-4 border rounded overflow-hidden">
+          <div class="d-flex">
+            <button id="tab-ongoing" class="w-50 btn border-0 fw-bold py-3 bg-info text-white">PENDING</button>
+            <button id="tab-borrowed" class="w-50 btn border-0 fw-bold py-3 bg-white text-dark">DECIDED</button>
+          </div>
+        </div>
 
-<!-- Ongoing Table -->
-<div id="ongoing-table">
-  <div class="table-responsive border rounded p-3">
-    <table class="table table-bordered align-middle text-center">
-      <thead class="table-light">
-        <tr>
-          <th>Borrower's NAME</th>
-          <th>Borrowed Item</th>
-          <th>Time Start</th>
-          <th>Time Returned</th>
-          <th>Date Start</th>
-          <th>Date Returned</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-        </tr>
-        <!-- Repeat <tr> as needed -->
-      </tbody>
-    </table>
-  </div>
-</div>
+        <!-- PENDING REQUESTS -->
+        <div id="ongoing-table">
+          <div class="table-responsive border rounded p-3">
+            <table class="table table-bordered align-middle text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>Homeowner ID</th>
+                  <th>Item</th>
+                  <th>Date</th>
+                  <th>Time Start</th>
+                  <th>Time End</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($item_requests_stmt as $req): ?>
+                  <?php if ($req['status'] === 'pending'): ?>
+                    <tr>
+                      <td><?= htmlspecialchars($req['user_id']) ?></td>
+                      <td><?= htmlspecialchars($req['item_name']) ?></td>
+                      <td><?= htmlspecialchars($req['request_date']) ?></td>
+                      <td><?= htmlspecialchars($req['time_start']) ?></td>
+                      <td><?= htmlspecialchars($req['time_end']) ?></td>
+                      <td>
+                      <form method="POST" action="update_item_status.php" class="d-inline">
+                        <input type="hidden" name="schedule_id" value="<?= $req['schedule_id'] ?>">
+                        <input type="hidden" name="status" value="approved">
+                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                      </form>
 
-<!-- Borrowed Table (Initially Hidden) -->
-<div id="borrowed-table" style="display: none;">
-  <div class="table-responsive border rounded p-3">
-    <table class="table table-bordered align-middle text-center">
-      <thead class="table-light">
-        <tr>
-          <th>Borrower's NAME</th>
-          <th>Borrowed Item</th>
-          <th>Time Start</th>
-          <th>Time Returned</th>
-          <th>Date Start</th>
-          <th>Date Returned</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-          <td><input class="form-control" readonly></td>
-        </tr>
-        <!-- Repeat <tr> as needed -->
-      </tbody>
-    </table>
-  </div>
-</div>
+                      <form method="POST" action="update_item_status.php" class="d-inline">
+                        <input type="hidden" name="schedule_id" value="<?= $req['schedule_id'] ?>">
+                        <input type="hidden" name="status" value="rejected">
+                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                      </form>
+                      </td>
+                    </tr>
+                  <?php endif; ?>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
+        <!-- DECIDED REQUESTS -->
+        <div id="borrowed-table" style="display: none;">
+          <div class="table-responsive border rounded p-3">
+            <table class="table table-bordered align-middle text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>Homeowner ID</th>
+                  <th>Item</th>
+                  <th>Date</th>
+                  <th>Time Start</th>
+                  <th>Time End</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($item_requests_stmt as $req): ?>
+                  <?php if ($req['status'] !== 'pending'): ?>
+                    <tr>
+                      <td><?= htmlspecialchars($req['user_id']) ?></td>
+                      <td><?= htmlspecialchars($req['item_name']) ?></td>
+                      <td><?= htmlspecialchars($req['request_date']) ?></td>
+                      <td><?= htmlspecialchars($req['time_start']) ?></td>
+                      <td><?= htmlspecialchars($req['time_end']) ?></td>
+                      <td>
+                        <span class="badge bg-<?= $req['status'] === 'approved' ? 'success' : 'danger' ?>">
+                          <?= ucfirst($req['status']) ?>
+                        </span>
+                      </td>
+                    </tr>
+                  <?php endif; ?>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
     </main>
   </div>
@@ -483,6 +653,227 @@ if (isset($_SESSION['user_id'])) {
 
 
 
+<!-- REPORT SECTION -->
+<section id="report" class="py-4 bg-white">
+  
+  <div class="container">
+    <!-- Toggle Button (Right aligned) -->
+  <div class="d-flex justify-content-end mb-2 px-4">
+        <button id="btnReportLogs" class="btn btn-primary btn-sm">REPORT LOGS</button>
+        <button id="btnSubmitReport" class="btn btn-success btn-sm" style="display: none;">SUBMIT REPORT</button>
+      </div>
+    <h1 class="fw-bold mb-4">REPORT</h1>
+
+    <div id="submit-report-section" class="border rounded p-4 shadow-sm bg-beige" style="background-color: beige;">
+      <form action="submit_report.php" method="POST">
+        <div class="mb-3">
+          <textarea name="report_message" class="form-control" rows="24" placeholder="Enter your report..." required></textarea>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <select name="block" class="form-select" required>
+              <option value="">Select Block</option>
+              <option value="A">Block A</option>
+              <option value="B">Block B</option>
+              <option value="C">Block C</option>
+              <!-- Add more blocks as needed -->
+            </select>
+          </div>
+          <div class="col-md-6">
+            <select name="lot" class="form-select" required>
+              <option value="">Select Lot</option>
+              <option value="1">Lot 1</option>
+              <option value="2">Lot 2</option>
+              <option value="3">Lot 3</option>
+              <!-- Add more lots as needed -->
+            </select>
+          </div>
+        </div>
+        <div class="text-end">
+          <button type="submit" class="btn btn-danger fw-bold">SUBMIT REPORT</button>
+        </div>
+      </form>
+      </div>
+    
+
+
+  <!-- Report Logs Section (hidden by default) -->
+<div id="report-logs-section" style="display: none;">
+<?php if (isset($_SESSION['report_message'])): ?>
+  <div class="alert alert-info">
+    <?= htmlspecialchars($_SESSION['report_message']); ?>
+  </div>
+  <?php unset($_SESSION['report_message']); ?>
+<?php endif; ?>
+  <h4 class="fw-bold mb-3">Ongoing Reports</h4>
+  <div class="border rounded p-4 shadow-sm" style="background-color: beige;">
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle text-center">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>House ID</th>
+            <th>Block</th>
+            <th>Lot</th>
+            <th>Message</th>
+            <th>Date Submitted</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php if (empty($report_logs)): ?>
+          <tr><td colspan="7" class="text-muted">No ongoing reports.</td></tr>
+        <?php else: ?>
+          <?php foreach ($report_logs as $log): ?>
+            <tr>
+              <td><?= htmlspecialchars($log['full_name']) ?></td>
+              <td><?= htmlspecialchars($log['user_id']) ?></td>
+              <td><?= htmlspecialchars($log['block']) ?></td>
+              <td><?= htmlspecialchars($log['lot']) ?></td>
+              <td><?= htmlspecialchars($log['message']) ?></td>
+              <td><?= htmlspecialchars($log['date_submitted']) ?></td>
+              <td>
+                <form method="POST" action="resolve_report.php">
+                  <input type="hidden" name="report_id" value="<?= $log['id'] ?>">
+                  <button type="submit" class="btn btn-primary btn-sm">Resolve</button>
+                </form>
+              </td>
+            </tr>
+          <?php endforeach; ?>
+        <?php endif; ?>
+
+          <!-- Repeat rows dynamically -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+</section>
+
+
+
+
+<!-- ACCOUNT DETAILS | VEHICLE REGISTRATION -->
+<section id="account" class="py-5 bg-light">
+  <div class="container">
+    <h2 class="fw-bold mb-4">ACCOUNT <small class="text-muted">| Vehicle Registration</small></h2>
+
+    <div class="border rounded p-4 shadow-sm" style="background-color: ;">
+      <h4 class="text-center fw-bold mb-4">Vehicle</h4>
+      <form action="submit_vehicle.php" method="POST" enctype="multipart/form-data">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Name <small class="text-muted">(on the registered vehicle)</small></label>
+            <input type="text" name="vehicle_owner" class="form-control" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Color</label>
+            <input type="text" name="color" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Type of Vehicle</label>
+            <select name="type" class="form-select" required>
+              <option value="">Select Type</option>
+              <option value="Car">Car</option>
+              <option value="Motorcycle">Motorcycle</option>
+              <option value="Bicycle">Bicycle</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Plate Number <small class="text-muted">(Optional)</small></label>
+            <input type="text" name="plate_number" class="form-control">
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Picture of the Vehicle</label>
+            <input type="file" name="vehicle_image" class="form-control">
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Block</label>
+            <select name="block" class="form-select" required>
+              <option value="">Select Block</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Lot</label>
+            <select name="lot" class="form-select" required>
+              <option value="">Select Lot</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="text-center">
+          <button type="submit" class="btn btn-primary px-5">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+
+<!-- Account Records Section -->
+<div class="container mt-5">
+  <h2 class="fw-bold mb-4">ACCOUNT RECORDS</h2>
+  <div class="table-responsive">
+    <table class="table table-bordered text-center align-middle shadow-sm">
+      <thead class="table-light">
+        <tr>
+          <th>User ID</th>
+          <th>Name of Vehicle</th>
+          <th>Type</th>
+          <th>Color</th>
+          <th>Plate</th>
+          <th>Block</th>
+          <th>Lot</th>
+          <th>Vehicle Image</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($vehicle_records as $record): ?>
+          <tr>
+            <td><?= htmlspecialchars($record['user_id']) ?></td>
+            <td><?= htmlspecialchars($record['name']) ?></td>
+            <td><?= htmlspecialchars($record['type_of_vehicle']) ?></td>
+            <td><?= htmlspecialchars($record['color']) ?></td>
+            <td><?= htmlspecialchars($record['plate_number'] ?: '—') ?></td>
+            <td><?= htmlspecialchars($record['block']) ?></td>
+            <td><?= htmlspecialchars($record['lot']) ?></td>
+            <td>
+              <?php if (!empty($record['vehicle_pic_path'])): ?>
+                <img src="<?= htmlspecialchars($record['vehicle_pic_path']) ?>"
+                    alt="Vehicle"
+                    class="img-thumbnail clickable-img"
+                    data-bs-toggle="modal"
+                    data-bs-target="#vehicleModal"
+                    data-img-src="<?= htmlspecialchars($record['vehicle_pic_path']) ?>"
+                    style="max-width: 80px; max-height: 80px; object-fit: cover; border-radius: 8px;">
+              <?php else: ?>
+                <span class="text-muted">No Image</span>
+              <?php endif; ?>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+</div>
 
 
 
@@ -494,11 +885,6 @@ if (isset($_SESSION['user_id'])) {
 
 
 
-
-
-
-
-
 <!-- MODALS SECTION -->
 <!-- MODALS SECTION -->
 <!-- MODALS SECTION -->
@@ -541,6 +927,16 @@ if (isset($_SESSION['user_id'])) {
 
 
 
+<!-- Vehicle Image Modal -->
+<div class="modal fade" id="vehicleModal" tabindex="-1" aria-labelledby="vehicleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-body text-center">
+        <img src="" id="modalImage" class="img-fluid rounded" alt="Vehicle Image">
+      </div>
+    </div>
+  </div>
+</div>
 
 
 
@@ -677,7 +1073,20 @@ if (isset($_SESSION['user_id'])) {
 
 
 
-
+<!-- bottom right toast popup after successfully logging in entry log section.-->
+<?php if (isset($_SESSION['entry_log_deleted'])): ?>
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+    <div class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <?= $_SESSION['entry_log_deleted']; ?>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+  <?php unset($_SESSION['entry_log_deleted']); ?>
+<?php endif; ?>
 
 
 
@@ -829,40 +1238,6 @@ if (isset($_SESSION['user_id'])) {
 
 
 
-<!-- items section to animate the highlighting for the 2 sections -->
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const itemTab = document.getElementById("tab-item");
-    const scheduleTab = document.getElementById("tab-schedule");
-    const itemSection = document.getElementById("items-section");
-    const scheduleSection = document.getElementById("schedule-section");
-    const highlightBar = document.getElementById("highlightBar");
-
-    function moveHighlight(button) {
-      const offset = button.offsetTop;
-      highlightBar.style.top = offset + "px";
-    }
-
-    itemTab.addEventListener("click", function () {
-      itemTab.classList.add("active");
-      scheduleTab.classList.remove("active");
-      itemSection.style.display = "block";
-      scheduleSection.style.display = "none";
-      moveHighlight(itemTab);
-    });
-
-    scheduleTab.addEventListener("click", function () {
-      scheduleTab.classList.add("active");
-      itemTab.classList.remove("active");
-      scheduleSection.style.display = "block";
-      itemSection.style.display = "none";
-      moveHighlight(scheduleTab);
-    });
-
-    // Set default highlight position on page load
-    moveHighlight(itemTab);
-  });
-</script>
 
 
 
@@ -905,7 +1280,169 @@ if (isset($_SESSION['user_id'])) {
 
 
 
+
+
+<!-- amenities section -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const viewTab = document.getElementById("tab-view");
+    const addTab = document.getElementById("tab-add");
+    const editTab = document.getElementById("tab-edit");
+
+    const viewSection = document.getElementById("viewAmenitiesSection");
+    const addSection = document.getElementById("addAmenitySection");
+    const editSection = document.getElementById("editAmenitySection");
+
+    function activateTab(tab, section) {
+      // Reset active classes
+      [viewTab, addTab, editTab].forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+
+      // Hide all, show selected
+      [viewSection, addSection, editSection].forEach(sec => sec.style.display = "none");
+      section.style.display = "block";
+    }
+
+    viewTab.addEventListener("click", function (e) {
+      e.preventDefault();
+      activateTab(viewTab, viewSection);
+    });
+
+    addTab.addEventListener("click", function (e) {
+      e.preventDefault();
+      activateTab(addTab, addSection);
+    });
+
+    editTab.addEventListener("click", function (e) {
+      e.preventDefault();
+      activateTab(editTab, editSection);
+    });
+  });
+</script>
+
+
+
+<!-- script for paging in amenities -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const amenities = document.querySelectorAll("#viewAmenitiesSection .carousel-container");
+  const dots = document.querySelectorAll(".dot-pagination .dot");
+  const nextBtn = document.getElementById("nextBtn");
+  const prevBtn = document.getElementById("prevBtn");
+
+  let currentAmenityIndex = 0;
+  let fakeDotIndex = 0; // Always loops 0-6 (7 dots)
+
+  function updateCarousel() {
+    // Show current amenity
+    amenities.forEach((el, i) => {
+      el.style.display = i === currentAmenityIndex ? "block" : "none";
+    });
+
+    // Highlight fake dot
+    dots.forEach(dot => dot.classList.remove("active-dot"));
+    dots[fakeDotIndex].classList.add("active-dot");
+  }
+
+  nextBtn.addEventListener("click", () => {
+    currentAmenityIndex = (currentAmenityIndex + 1) % amenities.length;
+    fakeDotIndex = (fakeDotIndex + 1) % dots.length;
+    updateCarousel();
+  });
+
+  prevBtn.addEventListener("click", () => {
+    currentAmenityIndex = (currentAmenityIndex - 1 + amenities.length) % amenities.length;
+    fakeDotIndex = (fakeDotIndex - 1 + dots.length) % dots.length;
+    updateCarousel();
+  });
+
+  updateCarousel(); // Initialize
+});
+</script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const btnView = document.getElementById("tab-view-items");
+    const btnAdd = document.getElementById("tab-add-item");
+    const btnEdit = document.getElementById("tab-edit-item");
+
+    const viewSection = document.getElementById("view-items-section");
+    const addSection = document.getElementById("add-item-section");
+    const editSection = document.getElementById("edit-item-section");
+
+    function switchTab(activeBtn, sectionToShow) {
+      [btnView, btnAdd, btnEdit].forEach(btn => {
+        btn.classList.remove("bg-info", "text-white");
+        btn.classList.add("bg-white", "text-dark");
+      });
+      activeBtn.classList.add("bg-info", "text-white");
+      activeBtn.classList.remove("bg-white", "text-dark");
+
+      [viewSection, addSection, editSection].forEach(sec => sec.style.display = "none");
+      sectionToShow.style.display = "block";
+    }
+
+    btnView.addEventListener("click", () => switchTab(btnView, viewSection));
+    btnAdd.addEventListener("click", () => switchTab(btnAdd, addSection));
+    btnEdit.addEventListener("click", () => switchTab(btnEdit, editSection));
+
+    // Show View tab by default
+    switchTab(btnView, viewSection);
+  });
+</script>
+
+<!-- report section toggle button -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const btnReportLogs = document.getElementById("btnReportLogs");
+    const btnSubmitReport = document.getElementById("btnSubmitReport");
+    const reportForm = document.getElementById("submit-report-section");
+    const reportLogs = document.getElementById("report-logs-section");
+
+    btnReportLogs.addEventListener("click", function () {
+      reportForm.style.display = "none";
+      reportLogs.style.display = "block";
+      btnReportLogs.style.display = "none";
+      btnSubmitReport.style.display = "inline-block";
+    });
+
+    btnSubmitReport.addEventListener("click", function () {
+      reportLogs.style.display = "none";
+      reportForm.style.display = "block";
+      btnSubmitReport.style.display = "none";
+      btnReportLogs.style.display = "inline-block";
+    });
+  });
+</script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const modalImage = document.getElementById('modalImage');
+    const vehicleModal = document.getElementById('vehicleModal');
+    document.querySelectorAll('.clickable-img').forEach(img => {
+      img.addEventListener('click', function () {
+        const src = img.getAttribute('data-img-src');
+        modalImage.setAttribute('src', src);
+      });
+    });
+  });
+</script>
+
+
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 
 </body>
 </html>

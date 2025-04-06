@@ -4,6 +4,8 @@ require 'db_connect.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_SESSION['user_id'] ?? '';
+    $role = $_SESSION['role'] ?? 'admin';
+    $redirectHome = ($role === 'homeowner') ? 'homeowner_homepage.php#report' : (($role === 'staff') ? 'staff_homepage.php#report' : 'homepage.php#report');    
     $message = trim($_POST['report_message'] ?? '');
     $block = $_POST['block'] ?? '';
     $lot = $_POST['lot'] ?? '';
@@ -23,7 +25,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $_SESSION['message'] = "Please fill out all required fields.";
     }
-}
 
-header("Location: homepage.php#report");
-exit;
+    // Redirect based on role
+    if ($role === 'homeowner') {
+        header("Location: homeowner_homepage.php#report");
+    } else {
+        header("Location: $redirectHome");
+
+    }
+    exit;
+}
+?>

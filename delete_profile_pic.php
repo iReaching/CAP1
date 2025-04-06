@@ -2,6 +2,10 @@
 session_start();
 require 'db_connect.php';
 
+$role = $_SESSION['role'] ?? 'admin';
+$redirectHome = ($role === 'homeowner') ? 'homeowner_homepage.php' : (($role === 'staff') ? 'staff_homepage.php' : 'homepage.php');
+
+
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['update_error'] = "Unauthorized access.";
     header("Location: homepage.php");
@@ -21,6 +25,6 @@ if ($stmt->execute()) {
     $_SESSION['update_error'] = "Failed to remove profile picture.";
 }
 
-header("Location: homepage.php");
+header("Location: $redirectHome");
 exit();
 ?>

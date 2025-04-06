@@ -6,6 +6,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 require 'db_connect.php';
 
+$user_id = $_SESSION['user_id'] ?? '';
+
 $profile = [
   'full_name' => '',
   'contact_number' => '',
@@ -41,6 +43,15 @@ $sched_query = $conn->prepare("
 $sched_query->bind_param("s", $_SESSION['user_id']);
 $sched_query->execute();
 $schedules = $sched_query->get_result();
+
+
+
+// Fetch only vehicles registered by the logged-in homeowner
+$vehicle_query = $conn->prepare("SELECT * FROM vehicle_registrations WHERE user_id = ? ORDER BY id DESC");
+$vehicle_query->bind_param("s", $user_id);
+$vehicle_query->execute();
+$result = $vehicle_query->get_result();
+$my_vehicles = $result->fetch_all(MYSQLI_ASSOC);
 ?>
 
 
@@ -477,6 +488,170 @@ $schedules = $sched_query->get_result();
 
 
 
+
+<!-- REPORT SECTION -->
+<section id="report" class="py-4 bg-white">
+  <div class="container">
+    <h1 class="fw-bold mb-4">REPORT</h1>
+    <div class="border rounded p-4 shadow-sm bg-beige" style="background-color: beige;">
+      <form action="submit_report.php" method="POST">
+        <div class="mb-3">
+          <textarea name="report_message" class="form-control" rows="26" placeholder="Enter your report..." required></textarea>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <select name="block" class="form-select" required>
+              <option value="">Select Block</option>
+              <option value="A">Block A</option>
+              <option value="B">Block B</option>
+              <option value="C">Block C</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <select name="lot" class="form-select" required>
+              <option value="">Select Lot</option>
+              <option value="1">Lot 1</option>
+              <option value="2">Lot 2</option>
+              <option value="3">Lot 3</option>
+            </select>
+          </div>
+        </div>
+        <div class="text-end">
+          <button type="submit" class="btn btn-danger fw-bold">SUBMIT REPORT</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- REGISTER VEHICLE SECTION -->
+<section id="account" class="py-5 bg-light">
+  <div class="container">
+    <h2 class="fw-bold mb-4">ACCOUNT <small class="text-muted">| Vehicle Registration</small></h2>
+
+    <!-- FORM -->
+    <div class="border rounded p-4 shadow-sm bg-white">
+      <h4 class="text-center fw-bold mb-4">Register Vehicle</h4>
+      <form action="submit_vehicle.php" method="POST" enctype="multipart/form-data">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Vehicle Name</label>
+            <input type="text" name="name" class="form-control" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Color</label>
+            <input type="text" name="color" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Type</label>
+            <select name="type_of_vehicle" class="form-select" required>
+              <option value="">Select Type</option>
+              <option value="Car">Car</option>
+              <option value="Motorcycle">Motorcycle</option>
+              <option value="Bicycle">Bicycle</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Plate Number <small>(optional)</small></label>
+            <input type="text" name="plate_number" class="form-control">
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Vehicle Image</label>
+            <input type="file" name="vehicle_image" class="form-control">
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Block</label>
+            <select name="block" class="form-select" required>
+              <option value="">Select Block</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Lot</label>
+            <select name="lot" class="form-select" required>
+              <option value="">Select Lot</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="text-center">
+          <button type="submit" class="btn btn-primary px-5">Submit</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- VEHICLE RECORDS -->
+    <div class="mt-5">
+      <h4 class="fw-bold mb-3">My Registered Vehicles</h4>
+      <?php if (empty($my_vehicles)): ?>
+      <p class="text-muted">No registered vehicles found.</p>
+    <?php else: ?>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center shadow-sm">
+          <thead class="table-light">
+            <tr>
+              <th>Vehicle Name</th>
+              <th>Type</th>
+              <th>Color</th>
+              <th>Plate No.</th>
+              <th>Block</th>
+              <th>Lot</th>
+              <th>Image</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($my_vehicles as $vehicle): ?>
+              <tr>
+                <td><?= htmlspecialchars($vehicle['name']) ?></td>
+                <td><?= htmlspecialchars($vehicle['type_of_vehicle']) ?></td>
+                <td><?= htmlspecialchars($vehicle['color']) ?></td>
+                <td><?= htmlspecialchars($vehicle['plate_number'] ?: '—') ?></td>
+                <td><?= htmlspecialchars($vehicle['block']) ?></td>
+                <td><?= htmlspecialchars($vehicle['lot']) ?></td>
+                <td>
+                  <?php if (!empty($vehicle['vehicle_pic_path'])): ?>
+                    <img src="<?= htmlspecialchars($vehicle['vehicle_pic_path']) ?>" style="max-width: 80px; max-height: 80px; object-fit: cover;" class="rounded">
+                  <?php else: ?>
+                    <span class="text-muted">No Image</span>
+                  <?php endif; ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    <?php endif; ?>
+
+  </div>
+</section>
 
 
 
