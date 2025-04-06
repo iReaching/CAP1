@@ -655,6 +655,37 @@ $my_vehicles = $result->fetch_all(MYSQLI_ASSOC);
 
 
 
+<!-- ENTRY LOG REQUEST SECTION -->
+<section id="entry-request" class="py-5 bg-light">
+  <div class="container">
+    <h2 class="fw-bold mb-4">ENTRY LOG REQUEST</h2>
+    <div class="border rounded p-4 shadow-sm bg-white">
+      <form action="request_entry_log.php" method="POST">
+        <div class="mb-3">
+          <label class="form-label">Visitor Name</label>
+          <input type="text" class="form-control" name="name" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Reason for Visit</label>
+          <input type="text" class="form-control" name="reason" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Vehicle Plate (optional)</label>
+          <input type="text" class="form-control" name="vehicle_plate">
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="expectedCheckbox" name="expected" value="1">
+          <label class="form-check-label" for="expectedCheckbox">This is an expected guest</label>
+        </div>
+        <div class="mb-3" id="expectedTimeGroup" style="display: none;">
+          <label class="form-label">Expected Time of Arrival</label>
+          <input type="time" class="form-control" name="expected_time">
+        </div>
+        <button type="submit" class="btn btn-success w-100">Submit Entry Request</button>
+      </form>
+    </div>
+  </div>
+</section>
 
 
 
@@ -931,7 +962,17 @@ $my_vehicles = $result->fetch_all(MYSQLI_ASSOC);
 <!-- JAVASCRIPTS SECTION -->
 
 
+<!-- script for entry log request -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const checkbox = document.getElementById("expectedCheckbox");
+    const expectedTimeGroup = document.getElementById("expectedTimeGroup");
 
+    checkbox.addEventListener("change", function () {
+      expectedTimeGroup.style.display = checkbox.checked ? "block" : "none";
+    });
+  });
+</script>
 
 
 

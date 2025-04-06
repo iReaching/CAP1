@@ -43,6 +43,7 @@ $schedule_requests = $schedule_stmt->fetch_all(MYSQLI_ASSOC);
 // Fetch items from database
 $sql = "SELECT * FROM items";
 $result = $conn->query($sql);
+$items = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 
 // Count borrowed per item
 $borrowed_counts = [];
@@ -81,14 +82,18 @@ if ($report_stmt && $report_stmt->num_rows > 0) {
 }
 
 
-
-// Fetch entry logs from database
+// Fetch entry logs
 $entry_logs = [];
-$entry_log_result = $conn->query("SELECT * FROM entry_log ORDER BY timestamp DESC LIMIT 10");
-if ($entry_log_result) {
-    $entry_logs = $entry_log_result->fetch_all(MYSQLI_ASSOC);
+if (isset($_GET['filter']) && $_GET['filter'] === 'expected') {
+    $result = $conn->query("SELECT * FROM entry_log WHERE expected = 1 ORDER BY timestamp DESC");
+} else {
+    $result = $conn->query("SELECT * FROM entry_log ORDER BY timestamp DESC");
+}
+if ($result) {
+    $entry_logs = $result->fetch_all(MYSQLI_ASSOC);
 }
 
+// Fetch vehicle records
 $vehicle_query = $conn->query("SELECT * FROM vehicle_registrations");
 $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
 
@@ -479,9 +484,9 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
               <!-- View Items Section -->
               <div id="view-items-section">
                 <h4 class="text-center mb-4">View Items</h4>
-                <?php if ($result->num_rows > 0): ?>
+                <?php if (!empty($items)): ?>
                   <div class="row">
-                    <?php while ($item = $result->fetch_assoc()): ?>
+                    <?php foreach ($items as $item): ?>
                       <div class="col-md-4 mb-4">
                         <div class="card shadow-sm h-100">
                           <div class="card-body">
@@ -497,7 +502,7 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
                           </div>
                         </div>
                       </div>
-                    <?php endwhile; ?>
+                    <?php endforeach; ?>
                   </div>
                 <?php else: ?>
                   <p>No items found.</p>
@@ -536,7 +541,7 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
                     <label for="edit-item-select" class="form-label">Select Item</label>
                     <select name="item_id" class="form-select" id="edit-item-select" required>
                       <option value="" disabled selected>Select an item</option>
-                      <?php foreach ($result as $item): ?>
+                      <?php foreach ($items as $item): ?>
                         <option value="<?php echo $item['id']; ?>"><?php echo htmlspecialchars($item['name']); ?></option>
                       <?php endforeach; ?>
                     </select>
@@ -769,7 +774,7 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
     <h2 class="fw-bold mb-4">ENTRY LOG</h2>
 
     <div class="border rounded p-4 shadow-sm bg-white">
-      <form action="log_entry_exit.php" method="POST" class="mb-4">
+      <form action="log_entry_exit.php" method="POST" enctype="multipart/form-data" class="mb-4">
         <div class="row g-3 mb-3">
           <div class="col-md-4">
             <label for="name" class="form-label">Name / Visitor</label>
@@ -789,11 +794,18 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
         </div>
 
         <div class="row g-3 mb-3">
-          <div class="col-md-10">
+          <div class="col-md-12">
             <label for="reason" class="form-label">Reason of Entry</label>
             <input type="text" class="form-control" name="reason" required>
           </div>
-          <div class="col-md-2 d-flex align-items-end">
+          <div class="col-md-12">
+            <label for="id_photo" class="form-label">ID Photo (optional)</label>
+            <input type="file" name="id_photo" accept="image/*" class="form-control">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3 justify-content-center">
+          <div class="col-md-3 d-flex align-items-end">
             <button type="submit" class="btn btn-primary w-100">Log</button>
           </div>
         </div>
@@ -801,6 +813,15 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
 
       <h5 class="fw-bold mb-3">Recent Logs</h5>
       <div class="table-responsive">
+      <div class="mb-3">
+        <form method="GET">
+          <label class="form-check-label me-2">Filter:</label>
+          <select name="filter" onchange="this.form.submit()" class="form-select w-auto d-inline-block">
+            <option value="">All Logs</option>
+            <option value="expected" <?= (isset($_GET['filter']) && $_GET['filter'] === 'expected') ? 'selected' : '' ?>>Expected Only</option>
+          </select>
+        </form>
+      </div>
         <table class="table table-bordered align-middle text-center">
         <thead class="table-light">
           <tr>
@@ -808,28 +829,44 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
             <th>Type</th>
             <th>Vehicle Plate</th>
             <th>Reason</th>
+            <th>Expected</th>
             <th>Timestamp</th>
             <th></th>
           </tr>
         </thead>
-          <tbody>
-            <?php foreach ($entry_logs as $log): ?>
-              <tr>
-                <td><?= htmlspecialchars($log['name']) ?></td>
-                <td><?= htmlspecialchars($log['entry_type']) ?></td>
-                <td><?= htmlspecialchars($log['vehicle_plate']) ?></td>
-                <td><?= htmlspecialchars($log['reason']) ?></td>
-                <td><?= htmlspecialchars($log['timestamp']) ?></td>
-                <td>
-                  <form action="delete_entry_log.php" method="POST" onsubmit="return confirm('Delete this log?');">
-                    <input type="hidden" name="log_id" value="<?= $log['id'] ?>">
-                    <button type="submit" class="btn btn-sm btn-danger">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            <?php endforeach; ?>
+        <tbody>
+          <?php foreach ($entry_logs as $log): ?>
+            <tr>
+              <td><?= htmlspecialchars($log['name']) ?></td>
+              <td><?= htmlspecialchars($log['entry_type']) ?></td>
+              <td><?= htmlspecialchars($log['vehicle_plate']) ?></td>
+              <td><?= htmlspecialchars($log['reason']) ?></td>
+              <td>
+                <?php if ($log['expected']): ?>
+                  <span class="badge bg-warning text-dark">Expected @ <?= htmlspecialchars($log['expected_time']) ?></span>
+                  <br><small class="text-muted">By: <?= htmlspecialchars($log['requested_by']) ?></small>
+                <?php else: ?>
+                  <span class="text-muted">No</span>
+                <?php endif; ?>
+              </td>
+              <td><?= htmlspecialchars($log['timestamp']) ?></td>
+              <td>
+                <form action="delete_entry_log.php" method="POST" onsubmit="return confirm('Delete this log?');">
+                  <input type="hidden" name="log_id" value="<?= $log['id'] ?>">
+                  <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </td>
+              <td>
+                <?php if (!empty($log['id_photo_path'])): ?>
+                  <a href="#" onclick="viewIDPhoto('<?= $log['id_photo_path'] ?>')" class="btn btn-sm btn-outline-primary">View</a>
+                <?php else: ?>
+                  No photo
+                <?php endif; ?>
+              </td>
+            </tr>
+          <?php endforeach; ?>
           </tbody>
         </table>
       </div>
@@ -1003,6 +1040,16 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
 <!-- MODALS SECTION -->
 
 
+<!-- ID Photo Modal -->
+<div class="modal fade" id="idPhotoModal" tabindex="-1" aria-labelledby="idPhotoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-body text-center">
+        <img src="" id="idPhotoModalImage" class="img-fluid rounded shadow" alt="ID Photo">
+      </div>
+    </div>
+  </div>
+</div>
 
 
 
@@ -1153,6 +1200,24 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
 <!-- JAVASCRIPTS SECTION -->
 <!-- JAVASCRIPTS SECTION -->
 <!-- JAVASCRIPTS SECTION -->
+
+
+
+<!-- show id photo -->
+<script>
+  function viewIDPhoto(src) {
+    const modalImg = document.getElementById('idPhotoPreview');
+    modalImg.src = src;
+    const modal = new bootstrap.Modal(document.getElementById('idPhotoModal'));
+    modal.show();
+  }
+</script>
+
+
+
+
+
+
 
 
 

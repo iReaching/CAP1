@@ -81,10 +81,6 @@ if ($report_stmt && $report_stmt->num_rows > 0) {
 }
 
 
-$vehicle_query = $conn->query("SELECT * FROM vehicle_registrations");
-$vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
-
-
 
 ?>
 
@@ -657,48 +653,10 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
 <section id="report" class="py-4 bg-white">
   
   <div class="container">
-    <!-- Toggle Button (Right aligned) -->
-  <div class="d-flex justify-content-end mb-2 px-4">
-        <button id="btnReportLogs" class="btn btn-primary btn-sm">REPORT LOGS</button>
-        <button id="btnSubmitReport" class="btn btn-success btn-sm" style="display: none;">SUBMIT REPORT</button>
-      </div>
-    <h1 class="fw-bold mb-4">REPORT</h1>
-
-    <div id="submit-report-section" class="border rounded p-4 shadow-sm bg-beige" style="background-color: beige;">
-      <form action="submit_report.php" method="POST">
-        <div class="mb-3">
-          <textarea name="report_message" class="form-control" rows="24" placeholder="Enter your report..." required></textarea>
-        </div>
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <select name="block" class="form-select" required>
-              <option value="">Select Block</option>
-              <option value="A">Block A</option>
-              <option value="B">Block B</option>
-              <option value="C">Block C</option>
-              <!-- Add more blocks as needed -->
-            </select>
-          </div>
-          <div class="col-md-6">
-            <select name="lot" class="form-select" required>
-              <option value="">Select Lot</option>
-              <option value="1">Lot 1</option>
-              <option value="2">Lot 2</option>
-              <option value="3">Lot 3</option>
-              <!-- Add more lots as needed -->
-            </select>
-          </div>
-        </div>
-        <div class="text-end">
-          <button type="submit" class="btn btn-danger fw-bold">SUBMIT REPORT</button>
-        </div>
-      </form>
-      </div>
-    
-
+   
 
   <!-- Report Logs Section (hidden by default) -->
-<div id="report-logs-section" style="display: none;">
+<div id="report-logs-section">
 <?php if (isset($_SESSION['report_message'])): ?>
   <div class="alert alert-info">
     <?= htmlspecialchars($_SESSION['report_message']); ?>
@@ -754,126 +712,6 @@ $vehicle_records = $vehicle_query->fetch_all(MYSQLI_ASSOC);
 
 
 
-
-<!-- ACCOUNT DETAILS | VEHICLE REGISTRATION -->
-<section id="account" class="py-5 bg-light">
-  <div class="container">
-    <h2 class="fw-bold mb-4">ACCOUNT <small class="text-muted">| Vehicle Registration</small></h2>
-
-    <div class="border rounded p-4 shadow-sm" style="background-color: ;">
-      <h4 class="text-center fw-bold mb-4">Vehicle</h4>
-      <form action="submit_vehicle.php" method="POST" enctype="multipart/form-data">
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Name <small class="text-muted">(on the registered vehicle)</small></label>
-            <input type="text" name="vehicle_owner" class="form-control" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Color</label>
-            <input type="text" name="color" class="form-control" required>
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Type of Vehicle</label>
-            <select name="type" class="form-select" required>
-              <option value="">Select Type</option>
-              <option value="Car">Car</option>
-              <option value="Motorcycle">Motorcycle</option>
-              <option value="Bicycle">Bicycle</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Plate Number <small class="text-muted">(Optional)</small></label>
-            <input type="text" name="plate_number" class="form-control">
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Picture of the Vehicle</label>
-            <input type="file" name="vehicle_image" class="form-control">
-          </div>
-        </div>
-
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label class="form-label">Block</label>
-            <select name="block" class="form-select" required>
-              <option value="">Select Block</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Lot</label>
-            <select name="lot" class="form-select" required>
-              <option value="">Select Lot</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="text-center">
-          <button type="submit" class="btn btn-primary px-5">Submit</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</section>
-
-
-<!-- Account Records Section -->
-<div class="container mt-5">
-  <h2 class="fw-bold mb-4">ACCOUNT RECORDS</h2>
-  <div class="table-responsive">
-    <table class="table table-bordered text-center align-middle shadow-sm">
-      <thead class="table-light">
-        <tr>
-          <th>User ID</th>
-          <th>Name of Vehicle</th>
-          <th>Type</th>
-          <th>Color</th>
-          <th>Plate</th>
-          <th>Block</th>
-          <th>Lot</th>
-          <th>Vehicle Image</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($vehicle_records as $record): ?>
-          <tr>
-            <td><?= htmlspecialchars($record['user_id']) ?></td>
-            <td><?= htmlspecialchars($record['name']) ?></td>
-            <td><?= htmlspecialchars($record['type_of_vehicle']) ?></td>
-            <td><?= htmlspecialchars($record['color']) ?></td>
-            <td><?= htmlspecialchars($record['plate_number'] ?: '—') ?></td>
-            <td><?= htmlspecialchars($record['block']) ?></td>
-            <td><?= htmlspecialchars($record['lot']) ?></td>
-            <td>
-              <?php if (!empty($record['vehicle_pic_path'])): ?>
-                <img src="<?= htmlspecialchars($record['vehicle_pic_path']) ?>"
-                    alt="Vehicle"
-                    class="img-thumbnail clickable-img"
-                    data-bs-toggle="modal"
-                    data-bs-target="#vehicleModal"
-                    data-img-src="<?= htmlspecialchars($record['vehicle_pic_path']) ?>"
-                    style="max-width: 80px; max-height: 80px; object-fit: cover; border-radius: 8px;">
-              <?php else: ?>
-                <span class="text-muted">No Image</span>
-              <?php endif; ?>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
-</div>
 
 
 

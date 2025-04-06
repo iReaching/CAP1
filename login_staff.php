@@ -66,7 +66,7 @@ session_start();
             var loginModal = new bootstrap.Modal(document.getElementById("loginSuccessModal"));
             loginModal.show();
             document.getElementById("loginSuccessModal").addEventListener("hidden.bs.modal", function () {
-              window.location.href = "homepage.php";
+              window.location.href = "staff_homepage.php";
             });
           });
         </script>
@@ -100,5 +100,15 @@ session_start();
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var loginModal = new bootstrap.Modal(document.getElementById("loginSuccessModal"));
+    loginModal.show();
+    document.getElementById("loginSuccessModal").addEventListener("hidden.bs.modal", function () {
+      window.location.href = "staff_homepage.php";
+    });
+  });
+</script>
+
 </body>
 </html>
