@@ -25,11 +25,14 @@ if (isset($_SESSION['user_id'])) {
 }
 
 
-// Fetch entry logs from database
 $entry_logs = [];
-$entry_log_result = $conn->query("SELECT * FROM entry_log ORDER BY timestamp DESC LIMIT 10");
-if ($entry_log_result) {
-    $entry_logs = $entry_log_result->fetch_all(MYSQLI_ASSOC);
+if (isset($_GET['filter']) && $_GET['filter'] === 'expected') {
+    $result = $conn->query("SELECT * FROM entry_log WHERE expected = 1 ORDER BY timestamp DESC");
+} else {
+    $result = $conn->query("SELECT * FROM entry_log ORDER BY timestamp DESC");
+}
+if ($result) {
+    $entry_logs = $result->fetch_all(MYSQLI_ASSOC);
 }
 
 ?>
@@ -166,7 +169,7 @@ if ($entry_log_result) {
     <h2 class="fw-bold mb-4">ENTRY LOG</h2>
 
     <div class="border rounded p-4 shadow-sm bg-white">
-      <form action="log_entry_exit.php" method="POST" class="mb-4">
+      <form action="log_entry_exit.php" method="POST" enctype="multipart/form-data" class="mb-4">
         <div class="row g-3 mb-3">
           <div class="col-md-4">
             <label for="name" class="form-label">Name / Visitor</label>
@@ -186,11 +189,18 @@ if ($entry_log_result) {
         </div>
 
         <div class="row g-3 mb-3">
-          <div class="col-md-10">
+          <div class="col-md-12">
             <label for="reason" class="form-label">Reason of Entry</label>
             <input type="text" class="form-control" name="reason" required>
           </div>
-          <div class="col-md-2 d-flex align-items-end">
+          <div class="col-md-12">
+            <label for="id_photo" class="form-label">ID Photo (optional)</label>
+            <input type="file" name="id_photo" accept="image/*" class="form-control">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3 justify-content-center">
+          <div class="col-md-3 d-flex align-items-end">
             <button type="submit" class="btn btn-primary w-100">Log</button>
           </div>
         </div>
@@ -198,6 +208,15 @@ if ($entry_log_result) {
 
       <h5 class="fw-bold mb-3">Recent Logs</h5>
       <div class="table-responsive">
+      <div class="mb-3">
+        <form method="GET">
+          <label class="form-check-label me-2">Filter:</label>
+          <select name="filter" onchange="this.form.submit()" class="form-select w-auto d-inline-block">
+            <option value="">All Logs</option>
+            <option value="expected" <?= (isset($_GET['filter']) && $_GET['filter'] === 'expected') ? 'selected' : '' ?>>Expected Only</option>
+          </select>
+        </form>
+      </div>
         <table class="table table-bordered align-middle text-center">
         <thead class="table-light">
           <tr>
@@ -205,28 +224,44 @@ if ($entry_log_result) {
             <th>Type</th>
             <th>Vehicle Plate</th>
             <th>Reason</th>
+            <th>Expected</th>
             <th>Timestamp</th>
             <th></th>
           </tr>
         </thead>
-          <tbody>
-            <?php foreach ($entry_logs as $log): ?>
-              <tr>
-                <td><?= htmlspecialchars($log['name']) ?></td>
-                <td><?= htmlspecialchars($log['entry_type']) ?></td>
-                <td><?= htmlspecialchars($log['vehicle_plate']) ?></td>
-                <td><?= htmlspecialchars($log['reason']) ?></td>
-                <td><?= htmlspecialchars($log['timestamp']) ?></td>
-                <td>
-                  <form action="delete_entry_log.php" method="POST" onsubmit="return confirm('Delete this log?');">
-                    <input type="hidden" name="log_id" value="<?= $log['id'] ?>">
-                    <button type="submit" class="btn btn-sm btn-danger">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            <?php endforeach; ?>
+        <tbody>
+          <?php foreach ($entry_logs as $log): ?>
+            <tr>
+              <td><?= htmlspecialchars($log['name']) ?></td>
+              <td><?= htmlspecialchars($log['entry_type']) ?></td>
+              <td><?= htmlspecialchars($log['vehicle_plate']) ?></td>
+              <td><?= htmlspecialchars($log['reason']) ?></td>
+              <td>
+                <?php if ($log['expected']): ?>
+                  <span class="badge bg-warning text-dark">Expected @ <?= htmlspecialchars($log['expected_time']) ?></span>
+                  <br><small class="text-muted">By: <?= htmlspecialchars($log['requested_by']) ?></small>
+                <?php else: ?>
+                  <span class="text-muted">No</span>
+                <?php endif; ?>
+              </td>
+              <td><?= htmlspecialchars($log['timestamp']) ?></td>
+              <td>
+                <form action="delete_entry_log.php" method="POST" onsubmit="return confirm('Delete this log?');">
+                  <input type="hidden" name="log_id" value="<?= $log['id'] ?>">
+                  <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </td>
+              <td>
+                <?php if (!empty($log['id_photo_path'])): ?>
+                  <a href="#" onclick="viewIDPhoto('<?= $log['id_photo_path'] ?>')" class="btn btn-sm btn-outline-primary">View</a>
+                <?php else: ?>
+                  No photo
+                <?php endif; ?>
+              </td>
+            </tr>
+          <?php endforeach; ?>
           </tbody>
         </table>
       </div>
@@ -284,6 +319,16 @@ if ($entry_log_result) {
 
 
 
+<!-- ID Photo Modal -->
+<div class="modal fade" id="idPhotoModal" tabindex="-1" aria-labelledby="idPhotoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-body text-center">
+        <img src="" id="idPhotoPreview" class="img-fluid rounded" alt="ID Photo">
+      </div>
+    </div>
+  </div>
+</div>
 
 
 
@@ -432,6 +477,20 @@ if ($entry_log_result) {
 <!-- JAVASCRIPTS SECTION -->
 <!-- JAVASCRIPTS SECTION -->
 <!-- JAVASCRIPTS SECTION -->
+
+
+<!-- show id photo -->
+<script>
+  function viewIDPhoto(src) {
+    const modalImg = document.getElementById('idPhotoPreview');
+    modalImg.src = src;
+    const modal = new bootstrap.Modal(document.getElementById('idPhotoModal'));
+    modal.show();
+  }
+</script>
+
+
+
 
 
 
